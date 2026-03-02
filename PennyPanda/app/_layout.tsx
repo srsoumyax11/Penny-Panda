@@ -1,10 +1,22 @@
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as Notifications from 'expo-notifications';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
+import { registerForPushNotificationsAsync } from '@/lib/notifications';
 
 import { useRouter, useSegments } from 'expo-router';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 function RootLayoutContent() {
   const { session, loading } = useAuth();
@@ -43,6 +55,10 @@ function RootLayoutContent() {
 
 export default function RootLayout() {
   useFrameworkReady();
+
+  useEffect(() => {
+    registerForPushNotificationsAsync();
+  }, []);
 
   return (
     <AuthProvider>

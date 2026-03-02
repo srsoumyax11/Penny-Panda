@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, Alert, SafeAreaView, Text, TouchableOpacity, TextInput, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { expenseService, settingsService } from '@/lib/storage';
-import { Button } from '@/components/Button';
 import { CategoryPicker } from '@/components/CategoryPicker';
-import { CURRENCIES, PAYMENT_METHODS } from '@/constants';
+import { Button } from '@/components/Button';
+import { CURRENCIES, PAYMENT_METHODS, BUDGET_ALERT_PERCENTAGE } from '@/constants';
 import { Calendar, AlignLeft, X, Wallet } from 'lucide-react-native';
+import { budgetService, expenseService, settingsService } from '@/lib/storage';
+import { sendBudgetAlert } from '@/lib/notifications';
 
 import { UI_COLORS } from '@/constants/theme';
 
@@ -72,6 +73,30 @@ export default function AddExpenseScreen() {
         payment_method: paymentMethod,
         receipt_url: null,
       });
+
+      // Budget Alert Logic
+      const settings = await settingsService.getSettings();
+      if (settings.budget_alert_enabled) {
+        const { spent, limit } = await budgetService.getBudgetStatus(category!, new Date());
+        
+        if (limit > 0) {
+          const ratio = spent / limit;
+          const catName = PAYMENT_METHODS.find(p => p.id === paymentMethod)?.name || category;
+          const displayCat = category!.charAt(0).toUpperCase() + category!.slice(1);
+
+          if (ratio >= 1.0) {
+            await sendBudgetAlert(
+              'Budget Exceeded! ⚠️',
+              `You've spent ${currencySymbol}${spent.toFixed(2)} on ${displayCat}, which is over your ${currencySymbol}${limit.toFixed(2)} limit!`
+            );
+          } else if (ratio >= (BUDGET_ALERT_PERCENTAGE / 100)) {
+            await sendBudgetAlert(
+              'Budget Warning 🔔',
+              `You've used ${(ratio * 100).toFixed(0)}% of your ${displayCat} budget (${currencySymbol}${spent.toFixed(2)} / ${currencySymbol}${limit.toFixed(2)}).`
+            );
+          }
+        }
+      }
 
       setAmount('');
       setDescription('');

@@ -22,6 +22,7 @@ export type Budget = {
 };
 
 export type UserSettings = {
+  id?: string;
   user_id: string;
   default_currency: string;
   budget_alert_enabled: boolean;

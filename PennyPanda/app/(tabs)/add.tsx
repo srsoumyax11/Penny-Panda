@@ -3,7 +3,7 @@ import { View, ScrollView, StyleSheet, Alert, SafeAreaView, Text, TouchableOpaci
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { expenseService, settingsService } from '@/lib/supabase';
+import { expenseService, settingsService } from '@/lib/storage';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { CategoryPicker } from '@/components/CategoryPicker';

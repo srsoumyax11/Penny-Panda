@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, Alert, SafeAreaView, Text, TouchableOpacity } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { expenseService, supabase } from '@/lib/supabase';
+import { expenseService } from '@/lib/storage';
 import { Expense } from '@/types';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
@@ -32,13 +32,8 @@ export default function EditExpenseScreen() {
   const loadExpense = async () => {
     if (!id) return;
     try {
-      const { data, error } = await supabase
-        .from('expenses')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
+      const allExpenses = await expenseService.getExpenses();
+      const data = allExpenses.find(e => e.id === id);
       if (data) {
         setExpense(data);
         setAmount(data.amount.toString());

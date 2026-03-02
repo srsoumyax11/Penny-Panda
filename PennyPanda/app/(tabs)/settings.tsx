@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '@/lib/auth-context';
-import { budgetService, settingsService, expenseService } from '@/lib/supabase';
+import { budgetService, settingsService, expenseService } from '@/lib/storage';
 import { Budget, UserSettings } from '@/types';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';

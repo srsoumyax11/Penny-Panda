@@ -1,6 +1,6 @@
 # PennyPanda - Expense Tracker
 
-A cute, minimalistic expense tracking app built with React Native (Expo) and Supabase.
+A cute, minimalistic expense tracking app built with React Native (Expo) and PocketBase.
 
 ## Features
 
@@ -10,8 +10,8 @@ A cute, minimalistic expense tracking app built with React Native (Expo) and Sup
 - **Budget Alerts**: Get notified when spending exceeds 80% of your monthly budget
 - **Analytics**: View detailed spending reports by category with visual breakdowns
 - **Multiple Currencies**: Support for 10+ currencies with flexible switching
-- **Real-time Sync**: All data synced securely with Supabase backend
-- **Authentication**: Secure email/password authentication
+- **Real-time Sync**: All data synced securely with PocketBase backend
+- **Authentication**: Secure email/password authentication via PocketBase
 
 ## Project Structure
 
@@ -39,7 +39,7 @@ components/
 └── SummaryCard.tsx          # Summary statistics card
 
 lib/
-├── supabase.ts              # Supabase client and service functions
+├── pocketbase.ts            # PocketBase client and service functions
 └── auth-context.tsx         # Authentication context provider
 
 types/
@@ -57,6 +57,7 @@ assets/
 ## Database Schema
 
 ### expenses
+
 - `id` - UUID primary key
 - `user_id` - Reference to authenticated user
 - `amount` - Expense amount
@@ -68,6 +69,7 @@ assets/
 - `created_at`, `updated_at` - Timestamps
 
 ### budgets
+
 - `id` - UUID primary key
 - `user_id` - Reference to authenticated user
 - `category` - Budget category
@@ -77,6 +79,7 @@ assets/
 - Unique constraint on (user_id, category)
 
 ### user_settings
+
 - `user_id` - Primary key, reference to authenticated user
 - `default_currency` - Default currency for new expenses
 - `budget_alert_enabled` - Whether to show budget alerts
@@ -85,6 +88,7 @@ assets/
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 16+
 - npm or yarn
 - Expo CLI
@@ -110,12 +114,14 @@ npm run typecheck
 ## Screens Overview
 
 ### Home Screen
+
 - Displays total spending for today and this month
 - Lists all recent expenses with details
 - Quick edit/delete actions on each expense
 - Pull-to-refresh functionality
 
 ### Add Expense Screen
+
 - Select expense category from predefined list
 - Enter amount and select currency
 - Optional description for the expense
@@ -124,6 +130,7 @@ npm run typecheck
 - Form validation before submission
 
 ### Analytics Screen
+
 - Monthly spending summary
 - Average expense calculation
 - Total transaction count
@@ -131,6 +138,7 @@ npm run typecheck
 - Visual progress bars for each category
 
 ### Settings Screen
+
 - Change default currency
 - Toggle budget alerts on/off
 - View and manage monthly budgets
@@ -141,18 +149,21 @@ npm run typecheck
 ## Architecture
 
 ### Authentication Flow
+
 1. Users sign up with email/password
-2. Credentials validated by Supabase Auth
+2. Credentials validated by PocketBase Auth
 3. Authenticated users can access app tabs
 4. All data requests include user authentication
 
 ### Data Management
+
 - All service functions (expenseService, budgetService, settingsService) handle API calls
-- Row Level Security (RLS) ensures users only access their own data
+- API Rules ensure users only access their own data
 - Data loaded on screen focus using `useFocusEffect`
 - Optimistic UI updates for better UX
 
 ### Styling
+
 - Minimalist design with black borders, white backgrounds, gray accents
 - No shadows - clean, flat design
 - Consistent spacing and typography
@@ -161,6 +172,7 @@ npm run typecheck
 ## Categories
 
 The app includes 8 default expense categories:
+
 - Food & Dining 🍔
 - Transport 🚗
 - Entertainment 🎬
@@ -177,16 +189,16 @@ USD, EUR, GBP, JPY, INR, AUD, CAD, CHF, CNY, SEK
 ## Configuration
 
 ### Environment Variables (.env)
+
 ```
-EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+EXPO_PUBLIC_PB_URL=your_pocketbase_url
 ```
 
 ## Security
 
-- All sensitive data stored securely on Supabase
-- Row Level Security (RLS) policies enforce data privacy
-- Passwords hashed and managed by Supabase Auth
+- All sensitive data stored securely on PocketBase
+- API rules enforce data privacy
+- Passwords hashed and managed by PocketBase Auth
 - No sensitive data logged or exposed in client code
 
 ## Future Enhancements

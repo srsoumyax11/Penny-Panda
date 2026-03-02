@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, FlatList, StyleSheet, Text, SafeAreaView, ScrollView } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { expenseService } from '@/lib/supabase';
+import { expenseService, budgetService } from '@/lib/storage';
 import { Expense } from '@/types';
 import { Card } from '@/components/Card';
 import { SummaryCard } from '@/components/SummaryCard';

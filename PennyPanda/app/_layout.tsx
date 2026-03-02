@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from '@/lib/auth-context';
 function RootLayoutContent() {
   const { session, loading } = useAuth();
 
+  // If we're loading the faux local session, show nothing to avoid flicker
   if (loading) {
     return null;
   }
@@ -14,11 +15,8 @@ function RootLayoutContent() {
   return (
     <>
       <Stack screenOptions={{ headerShown: false }}>
-        {session ? (
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        ) : (
-          <Stack.Screen name="auth" options={{ headerShown: false }} />
-        )}
+        {/* We are bypassing auth flow, always render (tabs) */}
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

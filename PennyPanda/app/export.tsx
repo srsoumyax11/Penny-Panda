@@ -15,11 +15,11 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { ChevronLeft, Calendar, Download, FileText, Share2, CheckCircle2 } from 'lucide-react-native';
-import { expenseService } from '@/lib/storage';
+import { expenseService, categoryService } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { UI_COLORS } from '@/constants/theme';
-import { CATEGORIES } from '@/constants';
-import { Expense } from '@/types';
+import { CATEGORIES, PAYMENT_METHODS } from '@/constants';
+import { Expense, Category } from '@/types';
 
 export default function ExportScreen() {
   const router = useRouter();
@@ -32,6 +32,7 @@ export default function ExportScreen() {
   
   const [expenseCount, setExpenseCount] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
 
@@ -42,12 +43,16 @@ export default function ExportScreen() {
   const updatePreview = async () => {
     setLoading(true);
     try {
-      const allExpenses = await expenseService.getExpenses({
-        startDate,
-        endDate: new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59),
-      });
+      const [allExpenses, allCategories] = await Promise.all([
+        expenseService.getExpenses({
+          startDate,
+          endDate: new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59),
+        }),
+        categoryService.getAllCategories(),
+      ]);
       setExpenseCount(allExpenses.length);
       setTotalAmount(allExpenses.reduce((sum, exp) => sum + exp.amount, 0));
+      setCategories(allCategories);
     } catch (error) {
       console.error('Preview error:', error);
     } finally {
@@ -99,10 +104,14 @@ export default function ExportScreen() {
 
     const rows = expenses.map(exp => {
       const pMethod = PAYMENT_METHODS.find(p => p.id === exp.payment_method);
+      const cat = categories.find(c => c.id === exp.category);
+      const isCustom = cat && !CATEGORIES.some(c => c.id === cat.id);
+      const catDisplay = cat ? (isCustom ? cat.icon + ' ' + cat.name : cat.name) : exp.category;
+      
       return `
         <tr>
           <td>${formatDate(exp.date)}</td>
-          <td>${CATEGORIES.find(c => c.id === exp.category)?.name || exp.category}</td>
+          <td>${catDisplay}</td>
           <td>${pMethod ? pMethod.icon + ' ' + pMethod.name : '-'}</td>
           <td>${exp.description || '-'}</td>
           <td style="text-align: right;">${exp.amount.toFixed(2)}</td>
@@ -110,12 +119,18 @@ export default function ExportScreen() {
       `;
     }).join('');
 
-    const summaryRows = Object.entries(categoryTotals).map(([cat, total]) => `
-      <tr>
-        <td>${CATEGORIES.find(c => c.id === cat)?.name || cat}</td>
-        <td style="text-align: right;">${total.toFixed(2)}</td>
-      </tr>
-    `).join('');
+    const summaryRows = Object.entries(categoryTotals).map(([catId, total]) => {
+      const cat = categories.find(c => c.id === catId);
+      const isCustom = cat && !CATEGORIES.some(c => c.id === cat.id);
+      const catDisplay = cat ? (isCustom ? cat.icon + ' ' + cat.name : cat.name) : catId;
+
+      return `
+        <tr>
+          <td>${catDisplay}</td>
+          <td style="text-align: right;">${total.toFixed(2)}</td>
+        </tr>
+      `;
+    }).join('');
 
     return `
       <html>
@@ -164,6 +179,7 @@ export default function ExportScreen() {
               <tr>
                 <th>Date</th>
                 <th>Category</th>
+                <th>Payment</th>
                 <th>Description</th>
                 <th style="text-align: right;">Amount (${currency})</th>
               </tr>
@@ -171,7 +187,7 @@ export default function ExportScreen() {
             <tbody>
               ${rows}
               <tr class="total-row">
-                <td colspan="3">TOTAL</td>
+                <td colspan="4">TOTAL</td>
                 <td style="text-align: right;">${totalAmount.toFixed(2)}</td>
               </tr>
             </tbody>
@@ -289,7 +305,7 @@ export default function ExportScreen() {
         </TouchableOpacity>
 
         <Text style={styles.infoText}>
-          The PDF will include a summary of category spending and a full list of all transactions within the selected range.
+          The PDF will include a summary of category spending and a full list of all transactions with payment methods and descriptions.
         </Text>
       </ScrollView>
 

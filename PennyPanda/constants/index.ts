@@ -7,6 +7,8 @@ export const CATEGORIES = [
   { id: 'health', name: 'Health & Fitness', icon: '💪', color: '#4CAF50' },
   { id: 'education', name: 'Education', icon: '📚', color: '#2196F3' },
   { id: 'other', name: 'Other', icon: '📌', color: '#757575' },
+  { id: 'dummy', name: 'Dummy', icon: '🧪', color: '#64748B' },
+  { id: 'demo', name: 'Demo', icon: '🤖', color: '#64748B' },
 ];
 
 export const PAYMENT_METHODS = [

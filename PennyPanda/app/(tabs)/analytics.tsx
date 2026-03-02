@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, Text, SafeAreaView, TouchableOpacity, DimensionValue, Platform } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { expenseService } from '@/lib/storage';
-import { Expense } from '@/types';
+import { expenseService, categoryService } from '@/lib/storage';
+import { Expense, Category } from '@/types';
 import { CATEGORIES, CURRENCIES } from '@/constants';
 import { BarChart2, Calendar as CalendarIcon, Lightbulb, TrendingUp, TrendingDown, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import Svg, { Path, Rect, Circle, G, Text as SvgText, LinearGradient, Defs, Stop } from 'react-native-svg';
@@ -15,14 +15,19 @@ type TimeRange = 'Day' | 'Week' | 'Month' | 'Year';
 
 export default function AnalyticsScreen() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [timeRange, setTimeRange] = useState<TimeRange>('Month');
   const [loading, setLoading] = useState(false);
 
   const loadExpenses = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await expenseService.getExpenses();
-      setExpenses(data);
+      const [expenseData, categoryData] = await Promise.all([
+        expenseService.getExpenses(),
+        categoryService.getAllCategories(),
+      ]);
+      setExpenses(expenseData);
+      setCategories(categoryData);
     } catch (err) {
       console.error('Failed to load expenses', err);
     } finally {
@@ -134,14 +139,14 @@ export default function AnalyticsScreen() {
       .sort(([, a], [, b]) => b - a)
       .slice(0, 5)
       .map(([id, value]) => {
-        const cat = CATEGORIES.find(c => c.id === id);
+        const cat = categories.find(c => c.id === id);
         return {
           label: cat?.name.substring(0, 3) || '?',
           value,
           color: cat?.color || UI_COLORS.primary
         };
       });
-  }, [stats]);
+  }, [stats, categories]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -220,13 +225,19 @@ export default function AnalyticsScreen() {
           {Object.entries(stats.categoryMap).length > 0 ? Object.entries(stats.categoryMap)
             .sort(([, a], [, b]) => b - a)
             .map(([catId, amount]) => {
-              const cat = CATEGORIES.find(c => c.id === catId);
+              const cat = categories.find(c => c.id === catId);
+              const isCustom = cat && !CATEGORIES.some(c => c.id === cat.id);
               const IconComp = getCategoryIcon(cat?.name || '');
+              
               return (
                 <View key={catId} style={styles.breakdownRow}>
                   <View style={styles.catInfo}>
                     <View style={[styles.catIcon, { backgroundColor: (cat?.color || UI_COLORS.primary) + '15' }]}>
-                      <IconComp color={cat?.color || UI_COLORS.primary} size={18} />
+                      {isCustom ? (
+                        <Text style={{ fontSize: 16 }}>{cat.icon}</Text>
+                      ) : (
+                        <IconComp color={cat?.color || UI_COLORS.primary} size={18} />
+                      )}
                     </View>
                     <Text style={styles.catNameText}>{cat?.name || 'Other'}</Text>
                   </View>

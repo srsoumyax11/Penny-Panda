@@ -19,4 +19,6 @@ export const CATEGORY_COLORS: Record<string, { bg: string, icon: string }> = {
   'utilities': { bg: '#FEF08A', icon: '#EAB308' },       // Yellow
   'home': { bg: '#F3E8FF', icon: '#A855F7' },            // Purple
   'entertainment': { bg: '#FCE7F3', icon: '#EC4899' },   // Pink
+  'demo': { bg: '#F8FAFC', icon: '#64748B' },
+  'dummy': { bg: '#F1F5F9', icon: '#64748B' },
 };

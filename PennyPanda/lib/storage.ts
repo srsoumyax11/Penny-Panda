@@ -1,10 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import uuid from 'react-native-uuid';
-import { Expense, Budget, UserSettings } from '@/types';
+import { Expense, Budget, UserSettings, Category } from '@/types';
 
 const EXPENSES_KEY = '@expenses';
 const BUDGETS_KEY = '@budgets';
 const SETTINGS_KEY = '@user_settings';
+const CUSTOM_CATEGORIES_KEY = '@custom_categories';
 
 // Helper to get matching records
 const filterRecords = <T extends any>(records: T[], filters: any) => {
@@ -212,5 +213,47 @@ export const settingsService = {
       await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(records));
       return newSettings;
     }
+  },
+};
+
+export const categoryService = {
+  async getCustomCategories(): Promise<Category[]> {
+    const sessionStr = await AsyncStorage.getItem('@session');
+    if (!sessionStr) return [];
+    const user = JSON.parse(sessionStr);
+
+    const jsonValue = await AsyncStorage.getItem(CUSTOM_CATEGORIES_KEY);
+    const records: (Category & { user_id: string })[] = jsonValue != null ? JSON.parse(jsonValue) : [];
+    
+    return records
+      .filter(r => r.user_id === user.id)
+      .map(({ user_id, ...cat }) => cat);
+  },
+
+  async addCategory(category: Omit<Category, 'id'>): Promise<Category> {
+    const sessionStr = await AsyncStorage.getItem('@session');
+    if (!sessionStr) throw new Error('Not authenticated');
+    const user = JSON.parse(sessionStr);
+
+    const jsonValue = await AsyncStorage.getItem(CUSTOM_CATEGORIES_KEY);
+    const records: (Category & { user_id: string })[] = jsonValue != null ? JSON.parse(jsonValue) : [];
+    
+    const newCategory = {
+      ...category,
+      id: uuid.v4().toString(),
+      user_id: user.id,
+    };
+
+    records.push(newCategory);
+    await AsyncStorage.setItem(CUSTOM_CATEGORIES_KEY, JSON.stringify(records));
+    
+    const { user_id, ...cat } = newCategory;
+    return cat;
+  },
+
+  async getAllCategories(): Promise<Category[]> {
+    const { CATEGORIES } = require('@/constants');
+    const custom = await this.getCustomCategories();
+    return [...CATEGORIES, ...custom];
   },
 };

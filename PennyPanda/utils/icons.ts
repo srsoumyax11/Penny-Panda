@@ -9,6 +9,8 @@ export const getCategoryIcon = (categoryName: string) => {
     case 'utilities': return Zap;
     case 'home': return HomeIcon;
     case 'entertainment': return Film;
+    case 'demo':
+    case 'dummy': return Zap;
     default: return DollarSign;
   }
 };

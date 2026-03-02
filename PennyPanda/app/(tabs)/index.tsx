@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, FlatList, StyleSheet, Text, RefreshControl, SafeAreaView, TouchableOpacity } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { expenseService } from '@/lib/storage';
-import { Expense } from '@/types';
+import { expenseService, categoryService } from '@/lib/storage';
+import { Expense, Category } from '@/types';
 import { ExpenseItem } from '@/components/ExpenseItem';
 import { SummaryCard } from '@/components/SummaryCard';
 import { Card } from '@/components/Card';
@@ -17,6 +17,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { session } = useAuth();
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,8 +25,12 @@ export default function HomeScreen() {
     setLoading(true);
     setError(null);
     try {
-      const data = await expenseService.getExpenses();
-      setExpenses(data);
+      const [expenseData, categoryData] = await Promise.all([
+        expenseService.getExpenses(),
+        categoryService.getAllCategories(),
+      ]);
+      setExpenses(expenseData);
+      setCategories(categoryData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load expenses');
     } finally {
@@ -100,6 +105,7 @@ export default function HomeScreen() {
         renderItem={({ item }) => (
           <ExpenseItem
             expense={item}
+            category={categories.find(c => c.id === item.category)}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />

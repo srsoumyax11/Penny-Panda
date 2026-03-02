@@ -2,8 +2,8 @@ import React, { useState, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, Text, SafeAreaView, TouchableOpacity, DimensionValue, Platform, Alert } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { ChevronLeft, Plus, Wallet, Trash2, Edit3, X } from 'lucide-react-native';
-import { budgetService, expenseService, settingsService } from '@/lib/storage';
-import { Budget, Expense, UserSettings } from '@/types';
+import { budgetService, expenseService, settingsService, categoryService } from '@/lib/storage';
+import { Budget, Expense, UserSettings, Category } from '@/types';
 import { CATEGORIES, CURRENCIES } from '@/constants';
 import { UI_COLORS } from '@/constants/theme';
 import { getCategoryIcon } from '@/utils/icons';
@@ -17,6 +17,7 @@ export default function BudgetScreen() {
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingBudgetId, setEditingBudgetId] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [newBudgetCategory, setNewBudgetCategory] = useState<string | null>(null);
   const [newBudgetAmount, setNewBudgetAmount] = useState('');
   const [saving, setSaving] = useState(false);
@@ -24,15 +25,17 @@ export default function BudgetScreen() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [fetchedBudgets, fetchedExpenses, fetchedSettings] = await Promise.all([
+      const [fetchedBudgets, fetchedExpenses, fetchedSettings, fetchedCategories] = await Promise.all([
         budgetService.getBudgets(),
         expenseService.getExpenses(),
         settingsService.getSettings(),
+        categoryService.getAllCategories(),
       ]);
 
       setBudgets(fetchedBudgets);
       setExpenses(fetchedExpenses);
       setSettings(fetchedSettings);
+      setCategories(fetchedCategories);
     } catch (error) {
       console.error('Error fetching budget data:', error);
     } finally {
@@ -180,7 +183,7 @@ export default function BudgetScreen() {
                 showsHorizontalScrollIndicator={false}
                 style={styles.categoryScroll}
               >
-                {CATEGORIES.filter((c) => !budgets.find((b) => b.category === c.id && b.id !== editingBudgetId)).map(
+                {categories.filter((c) => !budgets.find((b) => b.category === c.id && b.id !== editingBudgetId)).map(
                   (category) => (
                     <TouchableOpacity
                       key={category.id}
@@ -244,8 +247,10 @@ export default function BudgetScreen() {
         </View>
 
         {budgets.map((budget) => {
-          const category = CATEGORIES.find(c => c.id === budget.category);
-          const Icon = getCategoryIcon(budget.category);
+          const category = categories.find(c => c.id === budget.category);
+          const isStatic = CATEGORIES.some(c => c.id === budget.category);
+          const Icon = getCategoryIcon(category?.name || '');
+          
           const spent = currentMonthExpenses
             .filter(e => e.category === budget.category)
             .reduce((sum, e) => sum + e.amount, 0);
@@ -256,8 +261,12 @@ export default function BudgetScreen() {
             <View key={budget.id} style={styles.budgetCard}>
               <View style={styles.cardHeader}>
                 <View style={styles.categoryInfo}>
-                  <View style={[styles.iconContainer, { backgroundColor: category?.color + '20' || '#f1f5f9' }]}>
-                    <Icon size={24} color={category?.color || UI_COLORS.textSecondary} />
+                  <View style={[styles.iconContainer, { backgroundColor: (category?.color || UI_COLORS.textSecondary) + '20' }]}>
+                    {!isStatic && category ? (
+                      <Text style={{ fontSize: 24 }}>{category.icon}</Text>
+                    ) : (
+                      <Icon size={24} color={category?.color || UI_COLORS.textSecondary} />
+                    )}
                   </View>
                   <View>
                     <Text style={styles.categoryName}>{category?.name || 'Other'}</Text>

@@ -6,16 +6,18 @@ import { Trash2, ShoppingBag, Utensils, Zap, Car, Home as HomeIcon, Film, Dollar
 
 import { getCategoryIcon } from '@/utils/icons';
 import { UI_COLORS, CATEGORY_COLORS } from '@/constants/theme';
+import { Category } from '@/types';
 
 interface ExpenseItemProps {
   expense: Expense;
+  category?: Category;
   onEdit: (expense: Expense) => void;
   onDelete: (id: string) => void;
 }
 
 
-export function ExpenseItem({ expense, onEdit, onDelete }: ExpenseItemProps) {
-  const category = CATEGORIES.find((c) => c.id === expense.category);
+export function ExpenseItem({ expense, category, onEdit, onDelete }: ExpenseItemProps) {
+  const displayCategory = category || CATEGORIES.find((c) => c.id === expense.category);
   const currency = CURRENCIES.find((c) => c.code === expense.currency);
   const paymentMethod = PAYMENT_METHODS.find((p) => p.id === expense.payment_method);
   const date = new Date(expense.date);
@@ -25,24 +27,29 @@ export function ExpenseItem({ expense, onEdit, onDelete }: ExpenseItemProps) {
     ? `Today ${date.toLocaleTimeString('en-US', {hour: 'numeric', minute:'2-digit'})}` 
     : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute:'2-digit' });
 
-  const IconComponent = getCategoryIcon(category?.name || '');
-  const catTheme = CATEGORY_COLORS[category?.name?.toLowerCase() || ''] || { bg: '#F3F4F6', icon: '#6B7280' };
+  const IconComponent = displayCategory ? getCategoryIcon(displayCategory.name) : DollarSign;
+  const isEmojiIcon = displayCategory && !CATEGORIES.some(c => c.id === displayCategory.id);
+  const catTheme = CATEGORY_COLORS[displayCategory?.name?.toLowerCase() || ''] || { bg: '#F3F4F6', icon: '#6366f1' };
 
   return (
     <View style={styles.wrapper}>
       <TouchableOpacity onPress={() => onEdit(expense)} style={styles.expenseCard}>
         <View style={styles.expenseLeft}>
           <View style={[styles.iconContainer, { backgroundColor: catTheme.bg }]}>
-            <IconComponent size={20} color={catTheme.icon} strokeWidth={2.5}/>
+            {isEmojiIcon ? (
+              <Text style={{ fontSize: 20 }}>{displayCategory.icon}</Text>
+            ) : (
+              <IconComponent size={20} color={catTheme.icon} strokeWidth={2.5}/>
+            )}
           </View>
           <View>
             {expense.description ? (
                <Text style={styles.descriptionText}>{expense.description}</Text>
             ) : (
-               <Text style={styles.descriptionText}>{category?.name || 'Other'}</Text>
+               <Text style={styles.descriptionText}>{displayCategory?.name || 'Other'}</Text>
             )}
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-               <Text style={styles.categoryText}>{category?.name || 'Other'} • {formattedDate}</Text>
+               <Text style={styles.categoryText}>{displayCategory?.name || 'Other'} • {formattedDate}</Text>
                {paymentMethod && (
                  <View style={styles.paymentBadge}>
                     <Text style={styles.paymentBadgeText}>{paymentMethod.icon} {paymentMethod.name}</Text>

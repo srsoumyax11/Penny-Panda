@@ -8,13 +8,7 @@ import { CategoryPicker } from '@/components/CategoryPicker';
 import { CURRENCIES } from '@/constants';
 import { Calendar, AlignLeft, X } from 'lucide-react-native';
 
-const UI_COLORS = {
-  background: '#FFFFFF',
-  textMain: '#0F172A',     // Slate 900
-  textSecondary: '#64748B', // Slate 500
-  primary: '#14B8A6',       // Teal 500
-  buttonDark: '#111827',    // Gray 900
-};
+import { UI_COLORS } from '@/constants/theme';
 
 // Helper to format as DD/MM/YYYY
 const formatDateString = (d: Date) => {

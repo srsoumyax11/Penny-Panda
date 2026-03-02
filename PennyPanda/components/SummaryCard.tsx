@@ -1,15 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, DimensionValue } from 'react-native';
 
-const UI_COLORS = {
-  background: '#F8F9FA',
-  card: '#FFFFFF',
-  textMain: '#1A1A1A',
-  textSecondary: '#A0AEC0',
-  primary: '#8B5CF6',
-  primaryLight: '#EDE9FE',
-  success: '#10B981',
-};
+import { UI_COLORS } from '@/constants/theme';
 
 interface DashboardSummaryProps {
   todayAmount: string;

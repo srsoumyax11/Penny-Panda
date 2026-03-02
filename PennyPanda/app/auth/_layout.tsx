@@ -7,7 +7,7 @@ export default function AuthLayout() {
         headerShown: false,
       }}
     >
-      <Stack.Screen name="signin" />
+      <Stack.Screen name="index" />
       <Stack.Screen name="signup" />
     </Stack>
   );

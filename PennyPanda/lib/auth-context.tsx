@@ -2,16 +2,16 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import uuid from 'react-native-uuid';
 
-// Map PocketBase AuthModel to a simpler one
 export type AuthModel = {
   id: string;
   email: string;
+  name: string;
 };
 
 interface AuthContextType {
   session: AuthModel | null;
   loading: boolean;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -23,20 +23,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check local storage for existing session, or create a mock one.
     const loadSession = async () => {
       try {
         const sessionStr = await AsyncStorage.getItem('@session');
-        if (sessionStr) {
-          setSession(JSON.parse(sessionStr));
-        } else {
-          // Force inject a default session since we have no auth guard anymore
-          const defaultSession: AuthModel = { id: uuid.v4().toString(), email: 'penny@pennypanda.app' };
-          await AsyncStorage.setItem('@session', JSON.stringify(defaultSession));
-          setSession(defaultSession);
+        const isLoggedIn = await AsyncStorage.getItem('@isLoggedIn');
+        
+        if (isLoggedIn === 'true') {
+          if (sessionStr) {
+            try {
+              setSession(JSON.parse(sessionStr));
+            } catch (e) {
+              console.error('Failed to parse session, wiping data...');
+              await signOut(); // Clear everything if corrupted
+            }
+          } else {
+            console.error('Logged in flag set but no session found, wiping data...');
+            await signOut(); // Clear everything if inconsistent
+          }
         }
       } catch (error) {
-        console.error('Failed to load session', error);
+        console.error('Auth check error:', error);
       } finally {
         setLoading(false);
       }
@@ -44,39 +50,75 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadSession();
   }, []);
 
-  const signUp = async (email: string, password: string) => {
-    // In a completely offline app, we just create the user locally
-    const usersJson = await AsyncStorage.getItem('@users');
-    const users = usersJson ? JSON.parse(usersJson) : [];
-    
-    if (users.find((u: any) => u.email === email)) {
-      throw new Error('User already exists');
+  const signUp = async (email: string, password: string, name: string) => {
+    try {
+      const usersJson = await AsyncStorage.getItem('@users');
+      const users = usersJson ? JSON.parse(usersJson) : [];
+      
+      const emailLower = email.toLowerCase().trim();
+      
+      if (users.find((u: any) => u.email === emailLower)) {
+        throw new Error('User already exists');
+      }
+      
+      const newUser = { 
+        id: uuid.v4().toString(), 
+        email: emailLower, 
+        password, 
+        name: name.trim() 
+      };
+      
+      users.push(newUser);
+      await AsyncStorage.setItem('@users', JSON.stringify(users));
+      
+      // Auto sign in after signup
+      await signIn(emailLower, password);
+    } catch (error) {
+      console.error('SignUp Error:', error);
+      throw error;
     }
-    
-    const newUser = { id: uuid.v4().toString(), email, password }; // Note: In real world, hash password!
-    users.push(newUser);
-    await AsyncStorage.setItem('@users', JSON.stringify(users));
-    
-    await signIn(email, password);
   };
 
   const signIn = async (email: string, password: string) => {
-    const usersJson = await AsyncStorage.getItem('@users');
-    const users = usersJson ? JSON.parse(usersJson) : [];
-    
-    const user = users.find((u: any) => u.email === email && u.password === password);
-    if (!user) {
-      throw new Error('Invalid email or password');
+    try {
+      const usersJson = await AsyncStorage.getItem('@users');
+      const users = usersJson ? JSON.parse(usersJson) : [];
+      
+      const emailLower = email.toLowerCase().trim();
+      const user = users.find((u: any) => u.email === emailLower && u.password === password);
+      
+      if (!user) {
+        throw new Error('Invalid email or password. Please try again.');
+      }
+      
+      const userSession: AuthModel = { 
+        id: user.id, 
+        email: user.email, 
+        name: user.name 
+      };
+      
+      await AsyncStorage.setItem('@session', JSON.stringify(userSession));
+      await AsyncStorage.setItem('@isLoggedIn', 'true');
+      setSession(userSession);
+    } catch (error) {
+      console.error('SignIn Error:', error);
+      throw error;
     }
-    
-    const userSession: AuthModel = { id: user.id, email: user.email };
-    setSession(userSession);
-    await AsyncStorage.setItem('@session', JSON.stringify(userSession));
   };
 
   const signOut = async () => {
-    setSession(null);
-    await AsyncStorage.removeItem('@session');
+    try {
+      setSession(null);
+      await AsyncStorage.multiRemove([
+        '@session',
+        '@isLoggedIn',
+        '@expenses',
+        '@budgets',
+        '@user_settings'
+      ]);
+    } catch (error) {
+      console.error('SignOut Error:', error);
+    }
   };
 
   return (

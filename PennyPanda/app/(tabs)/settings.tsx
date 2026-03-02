@@ -17,30 +17,17 @@ import { Budget, UserSettings } from '@/types';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { CATEGORIES, CURRENCIES, BUDGET_ALERT_PERCENTAGE } from '@/constants';
-import { Trash2, ChevronLeft, Edit3, Globe, Bell, Moon, LogOut, ChevronRight, User, Shield, CreditCard } from 'lucide-react-native';
+import { Trash2, ChevronLeft, Edit3, Globe, Bell, Moon, LogOut, ChevronRight, User, Shield, CreditCard, Database, Zap } from 'lucide-react-native';
 
-const UI_COLORS = {
-  background: '#FAFAFD',
-  surface: '#FFFFFF',
-  textMain: '#1e293b',    // Slate 800
-  textSecondary: '#64748b', // Slate 500
-  primary: '#6366f1',     // Indigo 500, soft blurple matching the mockup
-  primaryLight: '#e0e7ff',// Indigo 100
-  border: '#f1f5f9',      // Slate 100
-  danger: '#ef4444',
-  success: '#10b981',
-};
+import { UI_COLORS } from '@/constants/theme';
 
 // Map currency codes to symbols/flags if needed, using Globe by default
 export default function SettingsScreen() {
   const router = useRouter();
-  const { signOut } = useAuth();
+  const { session, signOut } = useAuth();
   const [settings, setSettings] = useState<UserSettings | null>(null);
-  const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [newBudgetCategory, setNewBudgetCategory] = useState<string | null>(null);
-  const [newBudgetAmount, setNewBudgetAmount] = useState('');
   const [expenses, setExpenses] = useState<any[]>([]);
 
   useFocusEffect(
@@ -54,9 +41,6 @@ export default function SettingsScreen() {
     try {
       const settingsData = await settingsService.getSettings();
       setSettings(settingsData);
-
-      const budgetsData = await budgetService.getBudgets();
-      setBudgets(budgetsData);
 
       const expensesData = await expenseService.getExpenses();
       setExpenses(expensesData);
@@ -93,66 +77,83 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleAddBudget = async () => {
-    if (!newBudgetCategory || !newBudgetAmount || !settings) {
-      Alert.alert('Error', 'Please select a category and enter an amount');
-      return;
-    }
-
-    if (budgets.some((b) => b.category === newBudgetCategory)) {
-      Alert.alert('Error', 'Budget already exists for this category');
-      return;
-    }
-
+  const handleGenerateDummyData = async () => {
     setSaving(true);
     try {
-      const newBudget = await budgetService.addBudget({
-        category: newBudgetCategory,
-        monthly_limit: parseFloat(newBudgetAmount),
-        currency: settings.default_currency,
-      });
-      setBudgets([...budgets, newBudget]);
-      setNewBudgetCategory(null);
-      setNewBudgetAmount('');
-      Alert.alert('Success', 'Budget added');
+      const now = new Date();
+      const categories = CATEGORIES.map(c => c.id);
+      
+      // Generate for last 14 months
+      for (let i = 0; i < 14; i++) {
+        // Start date for this month
+        const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        
+        // Random number of expenses per month (5-15)
+        const count = Math.floor(Math.random() * 10) + 5;
+        
+        for (let j = 0; j < count; j++) {
+          const randomDay = Math.floor(Math.random() * 28) + 1;
+          const date = new Date(monthDate.getFullYear(), monthDate.getMonth(), randomDay);
+          const category = categories[Math.floor(Math.random() * categories.length)];
+          const amount = Math.floor(Math.random() * 150) + 10;
+          const note = `Test ${CATEGORIES.find(c => c.id === category)?.name} #${j + 1}`;
+
+          await expenseService.addExpense({
+            category,
+            amount,
+            date: date.toISOString(),
+            description: note,
+            currency: settings?.default_currency || 'USD',
+            receipt_url: null,
+          });
+        }
+      }
+      
+      await loadData();
+      Alert.alert('Success', '14 months of dummy data generated successfully!');
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to add budget');
+      Alert.alert('Error', 'Failed to generate dummy data');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeleteBudget = async (id: string) => {
-    Alert.alert('Delete Budget', 'Are you sure?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          setSaving(true);
-          try {
-            await budgetService.deleteBudget(id);
-            setBudgets(budgets.filter((b) => b.id !== id));
-          } catch (error) {
-            Alert.alert('Error', 'Failed to delete budget');
-          } finally {
-            setSaving(false);
-          }
-        },
-      },
-    ]);
+
+  const handleGenerateDummyBudgets = async () => {
+    setSaving(true);
+    try {
+      const dummyBudgets = [
+        { category: 'food', monthly_limit: 500, period: 'monthly' },
+        { category: 'transport', monthly_limit: 200, period: 'monthly' },
+        { category: 'entertainment', monthly_limit: 150, period: 'monthly' },
+        { category: 'shopping', monthly_limit: 300, period: 'monthly' },
+        { category: 'health', monthly_limit: 100, period: 'monthly' },
+      ];
+
+      for (const budget of dummyBudgets) {
+        await budgetService.addBudget(budget as any);
+      }
+      
+      await loadData();
+      Alert.alert('Success', 'Dummy budget plan generated successfully!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to generate dummy budgets');
+    } finally {
+      setSaving(false);
+    }
   };
 
+
   const handleSignOut = async () => {
-    Alert.alert('Sign Out', 'Are you sure?', [
+    Alert.alert('Sign Out', 'Signing out will clear all your financial data from this device. Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Sign Out',
+        text: 'Sign Out & Wipe Data',
         style: 'destructive',
         onPress: async () => {
           try {
             await signOut();
-            router.replace('/auth/signin');
+            // Root layout handles redirection
           } catch (error) {
             Alert.alert('Error', 'Failed to sign out');
           }
@@ -193,7 +194,7 @@ export default function SettingsScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerBtn}>
+        <TouchableOpacity style={styles.headerBtn} onPress={() => router.back()}>
           <ChevronLeft color={UI_COLORS.textMain} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Account</Text>
@@ -208,7 +209,7 @@ export default function SettingsScreen() {
             <View style={styles.avatarInner}>
                {/* Using a placeholder avatar. In a real app we'd load user.photoURL */}
                <Image 
-                 source={{ uri: 'https://i.pravatar.cc/300?img=11' }} 
+                 source={{ uri: `https://i.pravatar.cc/300?u=${session?.id}` }} 
                  style={styles.avatarImage} 
                />
                <TouchableOpacity style={styles.editAvatarBtn}>
@@ -216,8 +217,60 @@ export default function SettingsScreen() {
                </TouchableOpacity>
             </View>
           </View>
-          <Text style={styles.profileName}>Alex Panda</Text>
-          <Text style={styles.profileEmail}>alex.panda@example.com</Text>
+          <Text style={styles.profileName}>{session?.name || 'Friend'}</Text>
+          <Text style={styles.profileEmail}>{session?.email || 'email@example.com'}</Text>
+        </View>
+
+        {/* Development Block */}
+        <Text style={styles.blockTitle}>Development</Text>
+        <View style={styles.cardBlock}>
+            <TouchableOpacity 
+              style={styles.cardItem} 
+              onPress={handleGenerateDummyData}
+              disabled={saving}
+            >
+              <View style={styles.itemRow}>
+                <View style={[styles.itemIconBox, { backgroundColor: '#fee2e2' }]}>
+                  <Database color="#ef4444" size={20} />
+                </View>
+                <View>
+                  <Text style={styles.itemTextLeft}>Generate Dummy Data</Text>
+                  <Text style={styles.itemSubtext}>Seed 14 months of random expenses</Text>
+                </View>
+              </View>
+              {saving ? (
+                <View style={styles.proLabel}>
+                   <Text style={[styles.proLabel, { color: UI_COLORS.primary }]}>ADDING...</Text>
+                </View>
+              ) : (
+                <Zap color="#ef4444" size={16} />
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            <TouchableOpacity 
+              style={styles.cardItem} 
+              onPress={handleGenerateDummyBudgets}
+              disabled={saving}
+            >
+              <View style={styles.itemRow}>
+                <View style={[styles.itemIconBox, { backgroundColor: '#fdf2f8' }]}>
+                  <Zap color="#db2777" size={20} />
+                </View>
+                <View>
+                  <Text style={styles.itemTextLeft}>Generate Dummy Budgets</Text>
+                  <Text style={styles.itemSubtext}>Seed a standard monthly budget plan</Text>
+                </View>
+              </View>
+              {saving ? (
+                <View style={styles.proLabel}>
+                   <Text style={[styles.proLabel, { color: UI_COLORS.primary }]}>ADDING...</Text>
+                </View>
+              ) : (
+                <ChevronRight color={UI_COLORS.textSecondary} size={20} />
+              )}
+            </TouchableOpacity>
         </View>
 
         {/* Preferences Block */}
@@ -314,93 +367,7 @@ export default function SettingsScreen() {
            </View>
         </View>
 
-        {/* Budgets Block */}
-        <Text style={styles.blockTitle}>Monthly Budgets</Text>
-        <View style={styles.cardBlock}>
-          {budgets.length === 0 && (
-             <Text style={styles.emptyText}>No budgets set up yet.</Text>
-          )}
 
-          {budgets.map((budget, idx) => {
-            const status = getBudgetStatus(budget);
-            const categoryInfo = CATEGORIES.find((c) => c.id === budget.category);
-            const isAlert = status.percentage >= BUDGET_ALERT_PERCENTAGE;
-
-            return (
-              <View key={budget.id}>
-                {idx > 0 && <View style={styles.divider} />}
-                <View style={styles.budgetRow}>
-                  <View style={styles.budgetTop}>
-                    <View style={styles.budgetInfoLeft}>
-                      <Text style={styles.budgetIcon}>{categoryInfo?.icon || '📌'}</Text>
-                      <Text style={styles.budgetName}>{categoryInfo?.name || 'Other'}</Text>
-                    </View>
-                    <TouchableOpacity onPress={() => handleDeleteBudget(budget.id)} style={styles.budgetDelBtn}>
-                      <Trash2 size={16} color={UI_COLORS.danger} />
-                    </TouchableOpacity>
-                  </View>
-  
-                  <View style={styles.budgetProgressRow}>
-                     <View style={styles.progressBarBg}>
-                        <View style={[styles.progressBarFill, { width: `${Math.min(status.percentage, 100)}%`, backgroundColor: isAlert ? UI_COLORS.danger : UI_COLORS.primary }]} />
-                     </View>
-                     <Text style={[styles.budgetPercentageText, isAlert && { color: UI_COLORS.danger }]}>{status.percentage.toFixed(0)}%</Text>
-                  </View>
-                  
-                  <View style={styles.budgetAmountsRow}>
-                    <Text style={styles.budgetAmountText}>
-                      {settings?.default_currency === budget.currency ? '$' : ''}{status.spent.toFixed(2)} spent
-                    </Text>
-                    <Text style={styles.budgetAmountText}>
-                      / {settings?.default_currency === budget.currency ? '$' : ''}{budget.monthly_limit.toFixed(2)} limit
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            );
-          })}
-        </View>
-
-        {/* Add Budget Form (Using identical styling but standalone) */}
-        <Text style={styles.blockTitle}>Add New Budget</Text>
-        <View style={[styles.cardBlock, { padding: 16 }]}>
-           <ScrollView
-             horizontal
-             showsHorizontalScrollIndicator={false}
-             style={styles.categoryScroll}
-           >
-             {CATEGORIES.filter((c) => !budgets.find((b) => b.category === c.id)).map(
-               (category) => (
-                 <TouchableOpacity
-                   key={category.id}
-                   onPress={() => setNewBudgetCategory(category.id)}
-                   style={[styles.catOption, newBudgetCategory === category.id && styles.catOptionActive]}
-                 >
-                   <Text style={styles.catOptionIcon}>{category.icon}</Text>
-                 </TouchableOpacity>
-               )
-             )}
-           </ScrollView>
-           
-           <View style={styles.addBudgetInputRow}>
-             <View style={{ flex: 1, marginRight: 8 }}>
-               <Input
-                 placeholder="0.00 Limit"
-                 value={newBudgetAmount}
-                 onChangeText={setNewBudgetAmount}
-                 keyboardType="decimal-pad"
-                 editable={!saving}
-               />
-             </View>
-             <TouchableOpacity 
-                style={[styles.addBudgetBtn, (!newBudgetCategory || saving) && { opacity: 0.5 }]} 
-                onPress={handleAddBudget}
-                disabled={saving || !newBudgetCategory}
-             >
-                <Text style={styles.addBudgetBtnText}>Add</Text>
-             </TouchableOpacity>
-           </View>
-        </View>
 
         {/* Sign Out Button mapped perfectly to mockup */}
         <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut} disabled={saving}>
@@ -558,6 +525,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: UI_COLORS.textMain,
   },
+  itemSubtext: {
+    fontSize: 11,
+    color: UI_COLORS.textSecondary,
+    fontWeight: '500',
+  },
   proLabel: {
     fontSize: 12,
     fontWeight: '800',
@@ -613,8 +585,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: UI_COLORS.textMain,
   },
+  budgetEditBtn: {
+    padding: 6,
+    backgroundColor: UI_COLORS.primaryLight,
+    borderRadius: 8,
+    marginRight: 8,
+  },
   budgetDelBtn: {
-    padding: 4,
+    padding: 6,
     backgroundColor: '#fee2e2',
     borderRadius: 8,
   },

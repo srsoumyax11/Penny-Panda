@@ -4,23 +4,8 @@ import { Expense } from '@/types';
 import { CATEGORIES, CURRENCIES } from '@/constants';
 import { Trash2, ShoppingBag, Utensils, Zap, Car, Home as HomeIcon, Film, DollarSign } from 'lucide-react-native';
 
-const UI_COLORS = {
-  background: '#F8F9FA',
-  card: '#FFFFFF',
-  textMain: '#1A1A1A',
-  textSecondary: '#A0AEC0',
-  primary: '#8B5CF6',
-};
-
-const CATEGORY_COLORS: Record<string, { bg: string, icon: string }> = {
-  'food': { bg: '#FFEDD5', icon: '#F97316' },            // Orange
-  'food & dining': { bg: '#FFEDD5', icon: '#F97316' }, // Orange
-  'transport': { bg: '#E0F2FE', icon: '#0EA5E9' },       // Blue
-  'shopping': { bg: '#DCFCE7', icon: '#22C55E' },        // Green
-  'utilities': { bg: '#FEF08A', icon: '#EAB308' },       // Yellow
-  'home': { bg: '#F3E8FF', icon: '#A855F7' },            // Purple
-  'entertainment': { bg: '#FCE7F3', icon: '#EC4899' },   // Pink
-};
+import { getCategoryIcon } from '@/utils/icons';
+import { UI_COLORS, CATEGORY_COLORS } from '@/constants/theme';
 
 interface ExpenseItemProps {
   expense: Expense;
@@ -28,18 +13,6 @@ interface ExpenseItemProps {
   onDelete: (id: string) => void;
 }
 
-const getCategoryIcon = (categoryName: string) => {
-  switch(categoryName.toLowerCase()) {
-    case 'food':
-    case 'food & dining': return Utensils;
-    case 'transport': return Car;
-    case 'shopping': return ShoppingBag;
-    case 'utilities': return Zap;
-    case 'home': return HomeIcon;
-    case 'entertainment': return Film;
-    default: return DollarSign;
-  }
-}
 
 export function ExpenseItem({ expense, onEdit, onDelete }: ExpenseItemProps) {
   const category = CATEGORIES.find((c) => c.id === expense.category);

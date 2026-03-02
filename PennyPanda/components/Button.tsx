@@ -1,11 +1,11 @@
-import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, ActivityIndicator } from 'react-native';
 
 interface ButtonProps {
   onPress: () => void;
   title: string;
   variant?: 'primary' | 'secondary' | 'danger' | 'outline';
   disabled?: boolean;
+  loading?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
 }
@@ -15,17 +15,22 @@ export function Button({
   title,
   variant = 'primary',
   disabled = false,
+  loading = false,
   style,
   textStyle,
 }: ButtonProps) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      disabled={disabled}
-      style={[styles.button, styles[variant], disabled && styles.disabled, style]}
+      disabled={disabled || loading}
+      style={[styles.button, styles[variant], (disabled || loading) && styles.disabled, style]}
       activeOpacity={0.7}
     >
-      <Text style={[styles.text, styles[`${variant}Text`], textStyle]}>{title}</Text>
+      {loading ? (
+        <ActivityIndicator color={variant === 'outline' || variant === 'secondary' ? '#111827' : '#FFFFFF'} />
+      ) : (
+        <Text style={[styles.text, styles[`${variant}Text`], textStyle]}>{title}</Text>
+      )}
     </TouchableOpacity>
   );
 }

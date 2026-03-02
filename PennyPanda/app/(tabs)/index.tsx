@@ -9,18 +9,13 @@ import { Card } from '@/components/Card';
 import { CURRENCIES } from '@/constants';
 import { Bell } from 'lucide-react-native';
 
-const UI_COLORS = {
-  background: '#F8F9FA',
-  card: '#FFFFFF',
-  textMain: '#1A1A1A',
-  textSecondary: '#A0AEC0',
-  primary: '#8B5CF6',
-  primaryLight: '#EDE9FE',
-  success: '#10B981',
-};
+import { UI_COLORS } from '@/constants/theme';
+
+import { useAuth } from '@/lib/auth-context';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { session } = useAuth();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -92,7 +87,7 @@ export default function HomeScreen() {
           </View>
           <View>
             <Text style={styles.greeting}>PennyPanda</Text>
-            <Text style={styles.subGreeting}>Welcome back, Alex!</Text>
+            <Text style={styles.subGreeting}>Welcome back, {session?.name || 'Friend'}!</Text>
           </View>
         </View>
         <TouchableOpacity style={styles.headerAction}>

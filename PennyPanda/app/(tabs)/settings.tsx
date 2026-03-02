@@ -17,7 +17,7 @@ import { Budget, UserSettings } from '@/types';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { CATEGORIES, CURRENCIES, BUDGET_ALERT_PERCENTAGE } from '@/constants';
-import { Trash2, ChevronLeft, Edit3, Globe, Bell, Moon, LogOut, ChevronRight, User, Shield, CreditCard, Database, Zap } from 'lucide-react-native';
+import { Trash2, ChevronLeft, Edit3, Globe, Bell, Moon, LogOut, ChevronRight, User, Shield, CreditCard, Database, Zap, FileText } from 'lucide-react-native';
 
 import { UI_COLORS } from '@/constants/theme';
 
@@ -318,7 +318,10 @@ export default function SettingsScreen() {
 
            <View style={styles.divider} />
 
-           <TouchableOpacity style={styles.cardItem}>
+           <TouchableOpacity 
+             style={styles.cardItem} 
+             onPress={() => router.push('/export')}
+           >
              <View style={styles.itemRow}>
                <View style={[styles.itemIconBox, { backgroundColor: '#fef3c7' }]}>
                  <Shield color="#f59e0b" size={20} />
@@ -326,6 +329,24 @@ export default function SettingsScreen() {
                <Text style={styles.itemTextLeft}>Security & Privacy</Text>
              </View>
              <ChevronRight color={UI_COLORS.textSecondary} size={20} />
+           </TouchableOpacity>
+
+           <View style={styles.divider} />
+
+           <TouchableOpacity 
+             style={styles.cardItem} 
+             onPress={() => router.push('/export')}
+           >
+             <View style={styles.itemRow}>
+               <View style={[styles.itemIconBox, { backgroundColor: '#eff6ff' }]}>
+                 <FileText color="#3b82f6" size={20} />
+               </View>
+               <Text style={styles.itemTextLeft}>Export Data (PDF)</Text>
+             </View>
+             <View style={styles.itemRow}>
+                <Text style={styles.proLabel}>NEW</Text>
+                <ChevronRight color={UI_COLORS.textSecondary} size={20} />
+             </View>
            </TouchableOpacity>
 
         </View>

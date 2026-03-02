@@ -17,7 +17,7 @@ export function Input({ label, error, containerStyle, style, ...props }: InputPr
           error && styles.errorInput,
           style,
         ]}
-        placeholderTextColor="#999999"
+        placeholderTextColor="#94A3B8"
         {...props}
       />
       {error && <Text style={styles.errorText}>{error}</Text>}
@@ -27,30 +27,34 @@ export function Input({ label, error, containerStyle, style, ...props }: InputPr
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 12,
+    marginBottom: 20,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 6,
-    color: '#000000',
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B', // Soft gray
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: '#000000',
+    borderColor: '#E2E8F0',
+    borderRadius: 12, // More rounded borders
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: '#0F172A',
     backgroundColor: '#FFFFFF',
+    fontWeight: '500',
   },
   errorInput: {
-    borderColor: '#FF0000',
+    borderColor: '#EF4444',
   },
   errorText: {
-    color: '#FF0000',
+    color: '#EF4444',
     fontSize: 12,
-    marginTop: 4,
+    marginTop: 6,
+    fontWeight: '500',
   },
 });

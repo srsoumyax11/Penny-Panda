@@ -32,46 +32,46 @@ export function Button({
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: 12,
+    paddingVertical: 16,
     paddingHorizontal: 24,
-    borderRadius: 4,
+    borderRadius: 16, // Softer corners
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
   },
   primary: {
-    backgroundColor: '#000000',
-    borderColor: '#000000',
+    backgroundColor: '#111827', // Dark navy black
+    borderColor: '#111827',
   },
   secondary: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#000000',
+    borderColor: '#E2E8F0',
   },
   danger: {
-    backgroundColor: '#FF0000',
-    borderColor: '#FF0000',
+    backgroundColor: '#EF4444',
+    borderColor: '#EF4444',
   },
   outline: {
     backgroundColor: 'transparent',
-    borderColor: '#000000',
+    borderColor: '#E2E8F0',
   },
   disabled: {
     opacity: 0.5,
   },
   text: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
   },
   primaryText: {
     color: '#FFFFFF',
   },
   secondaryText: {
-    color: '#000000',
+    color: '#111827',
   },
   dangerText: {
     color: '#FFFFFF',
   },
   outlineText: {
-    color: '#000000',
+    color: '#111827',
   },
 });

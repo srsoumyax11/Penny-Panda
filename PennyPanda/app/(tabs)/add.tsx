@@ -1,27 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, Alert, SafeAreaView, Text, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, SafeAreaView, Text, TouchableOpacity, TextInput, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { expenseService, settingsService } from '@/lib/storage';
-import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { CategoryPicker } from '@/components/CategoryPicker';
 import { CURRENCIES } from '@/constants';
-import { Camera, X } from 'lucide-react-native';
+import { Calendar, AlignLeft, X } from 'lucide-react-native';
+
+const UI_COLORS = {
+  background: '#FFFFFF',
+  textMain: '#0F172A',     // Slate 900
+  textSecondary: '#64748B', // Slate 500
+  primary: '#14B8A6',       // Teal 500
+  buttonDark: '#111827',    // Gray 900
+};
+
+// Helper to format as DD/MM/YYYY
+const formatDateString = (d: Date) => {
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+};
 
 export default function AddExpenseScreen() {
   const router = useRouter();
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<string | null>(null);
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  // Date State
+  const [dateObj, setDateObj] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  
   const [currency, setCurrency] = useState('USD');
+  const [currencySymbol, setCurrencySymbol] = useState('$');
   const [loading, setLoading] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
-  const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [permission, requestPermission] = useCameraPermissions();
 
   useEffect(() => {
     loadSettings();
@@ -31,6 +47,8 @@ export default function AddExpenseScreen() {
     try {
       const settings = await settingsService.getSettings();
       setCurrency(settings.default_currency);
+      const symbol = CURRENCIES.find(c => c.code === settings.default_currency)?.symbol || '$';
+      setCurrencySymbol(symbol);
     } catch (err) {
       console.error('Failed to load settings:', err);
     }
@@ -41,7 +59,6 @@ export default function AddExpenseScreen() {
     if (!amount) newErrors.amount = 'Amount is required';
     if (isNaN(parseFloat(amount))) newErrors.amount = 'Please enter a valid amount';
     if (!category) newErrors.category = 'Category is required';
-    if (!date) newErrors.date = 'Date is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -56,16 +73,14 @@ export default function AddExpenseScreen() {
         currency,
         category: category!,
         description: description || null,
-        date: new Date(date).toISOString(),
-        receipt_url: receiptImage || null,
+        date: dateObj.toISOString(),
+        receipt_url: null,
       });
 
-      Alert.alert('Success', 'Expense added successfully!');
       setAmount('');
       setDescription('');
       setCategory(null);
-      setDate(new Date().toISOString().split('T')[0]);
-      setReceiptImage(null);
+      setDateObj(new Date());
       router.push('/(tabs)');
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to add expense');
@@ -74,131 +89,87 @@ export default function AddExpenseScreen() {
     }
   };
 
-  const handleTakePhoto = async () => {
-    if (!permission?.granted) {
-      await requestPermission();
-      return;
-    }
-    setShowCamera(true);
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    const currentDate = selectedDate || dateObj;
+    setShowDatePicker(Platform.OS === 'ios');
+    setDateObj(currentDate);
   };
-
-  const handlePickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      base64: true,
-      aspect: [4, 3],
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets[0].base64) {
-      setReceiptImage(`data:image/jpeg;base64,${result.assets[0].base64}`);
-    }
-  };
-
-  if (showCamera) {
-    return (
-      <View style={styles.cameraContainer}>
-        <CameraView style={styles.camera} facing="back">
-          <View style={styles.cameraHeader}>
-            <TouchableOpacity onPress={() => setShowCamera(false)}>
-              <X color="#FFFFFF" size={32} />
-            </TouchableOpacity>
-          </View>
-        </CameraView>
-      </View>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentInner}>
+      {/* Custom Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.closeBtn} onPress={() => router.push('/(tabs)')}>
+          <X size={24} color="#334155" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Add Expense</Text>
+        <View style={{ width: 44 }} />
+      </View>
+
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentInner} showsVerticalScrollIndicator={false}>
+        <View style={styles.amountSection}>
+          <Text style={styles.amountLabel}>AMOUNT</Text>
+          <View style={styles.amountInputRow}>
+            <Text style={styles.amountCurrency}>{currencySymbol}</Text>
+            <TextInput
+              style={styles.amountInput}
+              value={amount}
+              onChangeText={setAmount}
+              placeholder="0.00"
+              placeholderTextColor="#E2E8F0"
+              keyboardType="decimal-pad"
+              editable={!loading}
+            />
+          </View>
+          {errors.amount && <Text style={styles.errorText}>{errors.amount}</Text>}
+        </View>
         <CategoryPicker selectedCategory={category} onSelect={setCategory} />
-
-        <Input
-          label="Amount"
-          placeholder="0.00"
-          value={amount}
-          onChangeText={setAmount}
-          keyboardType="decimal-pad"
-          editable={!loading}
-          error={errors.amount}
-        />
-
-        <View style={styles.currencyContainer}>
-          <Text style={styles.label}>Currency</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.currencyScroll}>
-            {CURRENCIES.map((curr) => (
-              <TouchableOpacity
-                key={curr.code}
-                onPress={() => setCurrency(curr.code)}
-                style={[
-                  styles.currencyButton,
-                  currency === curr.code && styles.currencyButtonActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.currencyButtonText,
-                    currency === curr.code && styles.currencyButtonTextActive,
-                  ]}
-                >
-                  {curr.code}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+        {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
+        <View style={styles.inputSection}>
+           <Text style={styles.sectionLabel}>DATE</Text>
+           <TouchableOpacity 
+             style={styles.iconInputBox} 
+             onPress={() => setShowDatePicker(true)}
+             activeOpacity={0.7}
+           >
+              <Calendar color="#94A3B8" size={20} style={styles.inputIcon} />
+              <Text style={styles.iconInputText}>
+                {formatDateString(dateObj)}
+              </Text>
+              <Calendar color="#334155" size={20} style={styles.inputIconRight} />
+           </TouchableOpacity>
+           
+           {showDatePicker && (
+             <DateTimePicker
+               value={dateObj}
+               mode="date"
+               display="default"
+               onChange={onDateChange}
+               maximumDate={new Date()}
+             />
+           )}
+        </View>
+        <View style={styles.inputSection}>
+           <Text style={styles.sectionLabel}>NOTE</Text>
+           <View style={styles.iconInputBox}>
+              <AlignLeft color="#94A3B8" size={20} style={styles.inputIcon} />
+              <TextInput
+                 style={styles.iconInput}
+                 value={description}
+                 onChangeText={setDescription}
+                 placeholder="What was this for?"
+                 placeholderTextColor="#94A3B8"
+                 editable={!loading}
+              />
+           </View>
         </View>
 
-        <Input
-          label="Description (Optional)"
-          placeholder="What did you spend on?"
-          value={description}
-          onChangeText={setDescription}
-          editable={!loading}
-          multiline
-        />
-
-        <Input
-          label="Date"
-          placeholder="YYYY-MM-DD"
-          value={date}
-          onChangeText={setDate}
-          editable={!loading}
-        />
-
-        <View style={styles.receiptSection}>
-          <Text style={styles.label}>Receipt (Optional)</Text>
-          {receiptImage && (
-            <View style={styles.receiptPreview}>
-              <Text style={styles.receiptText}>Receipt uploaded</Text>
-              <TouchableOpacity onPress={() => setReceiptImage(null)}>
-                <Text style={styles.removeReceipt}>Remove</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-          {!receiptImage && (
-            <View style={styles.receiptButtons}>
-              <Button
-                title="Take Photo"
-                variant="outline"
-                onPress={handleTakePhoto}
-                style={styles.receiptButton}
-              />
-              <Button
-                title="Choose Image"
-                variant="outline"
-                onPress={handlePickImage}
-                style={styles.receiptButton}
-              />
-            </View>
-          )}
-        </View>
-
+        <View style={styles.spacer} />
         <Button
-          title={loading ? 'Adding Expense...' : 'Add Expense'}
+          title={loading ? 'Saving...' : 'Save Expense'}
           onPress={handleAddExpense}
           disabled={loading}
-          style={styles.submitButton}
+          style={styles.saveBtn}
         />
       </ScrollView>
     </SafeAreaView>
@@ -208,92 +179,116 @@ export default function AddExpenseScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: UI_COLORS.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 48,
+    paddingBottom: 20,
+  },
+  closeBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F1F5F9', // Subtle gray
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: UI_COLORS.textMain,
   },
   content: {
     flex: 1,
   },
   contentInner: {
-    padding: 16,
-    paddingBottom: 32,
+    padding: 24,
+    paddingBottom: 40,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#000000',
+  amountSection: {
+    alignItems: 'center',
+    marginBottom: 40,
   },
-  currencyContainer: {
+  amountLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#94A3B8',
+    letterSpacing: 1,
     marginBottom: 16,
   },
-  currencyScroll: {
-    flexGrow: 0,
+  amountInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  currencyButton: {
-    borderWidth: 1,
-    borderColor: '#CCCCCC',
-    borderRadius: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  amountCurrency: {
+    fontSize: 48,
+    fontWeight: '600',
+    color: UI_COLORS.primary, // Teal
     marginRight: 8,
-    backgroundColor: '#FFFFFF',
   },
-  currencyButtonActive: {
-    borderColor: '#000000',
-    backgroundColor: '#F0F0F0',
-  },
-  currencyButtonText: {
-    fontSize: 12,
-    color: '#000000',
-    fontWeight: '500',
-  },
-  currencyButtonTextActive: {
+  amountInput: {
+    fontSize: 72,
     fontWeight: '700',
+    color: UI_COLORS.textMain,
+    minWidth: 160,
+    textAlign: 'center',
   },
-  receiptSection: {
+  inputSection: {
     marginBottom: 24,
   },
-  receiptButtons: {
-    flexDirection: 'row',
-    gap: 8,
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
   },
-  receiptButton: {
-    flex: 1,
-  },
-  receiptPreview: {
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 4,
-    padding: 12,
+  iconInputBox: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F0F0F0',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    height: 56,
   },
-  receiptText: {
-    fontSize: 14,
-    color: '#000000',
+  inputIcon: {
+    marginRight: 12,
+  },
+  inputIconRight: {
+    marginLeft: 12,
+  },
+  iconInputText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#0F172A',
     fontWeight: '500',
   },
-  removeReceipt: {
+  iconInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#0F172A',
+    fontWeight: '500',
+  },
+  errorText: {
+    color: '#EF4444',
     fontSize: 12,
-    color: '#FF0000',
-    fontWeight: '600',
-  },
-  submitButton: {
     marginTop: 8,
+    fontWeight: '500',
+    textAlign: 'center',
   },
-  cameraContainer: {
-    flex: 1,
-    backgroundColor: '#000000',
+  spacer: {
+    height: 32,
   },
-  camera: {
-    flex: 1,
-  },
-  cameraHeader: {
-    padding: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  saveBtn: {
+    paddingVertical: 18,
+    borderRadius: 16,
   },
 });

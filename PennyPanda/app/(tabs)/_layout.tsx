@@ -49,6 +49,7 @@ export default function TabLayout() {
         name="analytics"
         options={{
           title: 'Stats',
+          headerShown: false,
           tabBarLabel: 'Stats',
           tabBarIcon: ({ color, size }) => <BarChart3 color={color} size={24} strokeWidth={2.5} />,
         }}
@@ -56,15 +57,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="add"
         options={{
-          title: '',
-          tabBarLabel: '',
-          tabBarIcon: () => (
-            <View style={styles.floatingButtonSpacer}>
-              <View style={styles.floatingButton}>
-                <Plus color="#FFFFFF" size={32} strokeWidth={2} />
-              </View>
+          title: 'Add',
+          headerShown: false,
+          tabBarIcon: ({ size }) => (
+            <View style={styles.floatingButton}>
+              <Plus size={32} color="#FFFFFF" />
             </View>
           ),
+          tabBarLabel: () => null, // Hide label for the '+' button
         }}
       />
       <Tabs.Screen

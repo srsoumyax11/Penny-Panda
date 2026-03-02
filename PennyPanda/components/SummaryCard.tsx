@@ -25,7 +25,6 @@ export function SummaryCard({ todayAmount, monthAmount, currency }: DashboardSum
 
   return (
     <View style={styles.card}>
-      {/* Today Section */}
       <View style={styles.section}>
         <Text style={styles.label}>TODAY'S SPENDING</Text>
         <View style={styles.amountRow}>
@@ -33,16 +32,10 @@ export function SummaryCard({ todayAmount, monthAmount, currency }: DashboardSum
           <Text style={styles.trend}>↓ 12%</Text>
         </View>
       </View>
-
-      {/* Spacer */}
       <View style={{ height: 24 }} />
-
-      {/* Month Section */}
       <View style={styles.section}>
         <Text style={styles.label}>THIS MONTH'S SPENDING</Text>
         <Text style={styles.amountMonth}>{currency}{monthAmount}</Text>
-
-        {/* Progress Bar */}
         <View style={styles.progressBarBg}>
           <View style={[styles.progressBarFill, { width: `${percentUsed}%` as DimensionValue }]} />
         </View>

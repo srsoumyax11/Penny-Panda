@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   ScrollView,
@@ -8,6 +8,7 @@ import {
   Alert,
   TouchableOpacity,
   Switch,
+  Image,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '@/lib/auth-context';
@@ -15,10 +16,22 @@ import { budgetService, settingsService, expenseService } from '@/lib/storage';
 import { Budget, UserSettings } from '@/types';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
-import { Card } from '@/components/Card';
 import { CATEGORIES, CURRENCIES, BUDGET_ALERT_PERCENTAGE } from '@/constants';
-import { Trash2 } from 'lucide-react-native';
+import { Trash2, ChevronLeft, Edit3, Globe, Bell, Moon, LogOut, ChevronRight, User, Shield, CreditCard } from 'lucide-react-native';
 
+const UI_COLORS = {
+  background: '#FAFAFD',
+  surface: '#FFFFFF',
+  textMain: '#1e293b',    // Slate 800
+  textSecondary: '#64748b', // Slate 500
+  primary: '#6366f1',     // Indigo 500, soft blurple matching the mockup
+  primaryLight: '#e0e7ff',// Indigo 100
+  border: '#f1f5f9',      // Slate 100
+  danger: '#ef4444',
+  success: '#10b981',
+};
+
+// Map currency codes to symbols/flags if needed, using Globe by default
 export default function SettingsScreen() {
   const router = useRouter();
   const { signOut } = useAuth();
@@ -170,7 +183,7 @@ export default function SettingsScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <Text>Loading settings...</Text>
+          <Text style={styles.loadingText}>Loading account info...</Text>
         </View>
       </SafeAreaView>
     );
@@ -178,160 +191,225 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentInner}>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Preferences</Text>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.headerBtn}>
+          <ChevronLeft color={UI_COLORS.textMain} size={24} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Account</Text>
+        <View style={styles.headerBtn} />
+      </View>
 
-          <Card style={styles.settingCard}>
-            <Text style={styles.settingLabel}>Default Currency</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.currencyList}
-            >
-              {CURRENCIES.map((curr) => (
-                <TouchableOpacity
-                  key={curr.code}
-                  onPress={() => handleCurrencyChange(curr.code)}
-                  style={[
-                    styles.currencyButton,
-                    settings?.default_currency === curr.code && styles.currencyButtonActive,
-                  ]}
-                  disabled={saving}
-                >
-                  <Text
-                    style={[
-                      styles.currencyButtonText,
-                      settings?.default_currency === curr.code &&
-                        styles.currencyButtonTextActive,
-                    ]}
-                  >
-                    {curr.code}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </Card>
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentInner} showsVerticalScrollIndicator={false}>
+        
+        {/* Profile Card */}
+        <View style={styles.profileSection}>
+          <View style={styles.avatarWrapper}>
+            <View style={styles.avatarInner}>
+               {/* Using a placeholder avatar. In a real app we'd load user.photoURL */}
+               <Image 
+                 source={{ uri: 'https://i.pravatar.cc/300?img=11' }} 
+                 style={styles.avatarImage} 
+               />
+               <TouchableOpacity style={styles.editAvatarBtn}>
+                 <Edit3 color="#FFFFFF" size={14} />
+               </TouchableOpacity>
+            </View>
+          </View>
+          <Text style={styles.profileName}>Alex Panda</Text>
+          <Text style={styles.profileEmail}>alex.panda@example.com</Text>
+        </View>
 
-          <Card style={styles.settingCard}>
-            <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Budget Alerts</Text>
-              <Switch
+        {/* Preferences Block */}
+        <View style={styles.cardBlock}>
+           {/* Currency Item */}
+           <View style={styles.cardItem}>
+             <View style={styles.itemRow}>
+               <View style={[styles.itemIconBox, { backgroundColor: '#e0e7ff' }]}>
+                 <Globe color="#6366f1" size={20} />
+               </View>
+               <Text style={styles.itemTextLeft}>Default Currency</Text>
+             </View>
+             
+             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.currencyScroll} snapToInterval={60} decelerationRate="fast">
+               {CURRENCIES.map((curr) => (
+                 <TouchableOpacity
+                   key={curr.code}
+                   onPress={() => handleCurrencyChange(curr.code)}
+                   style={[styles.currencyPill, settings?.default_currency === curr.code && styles.currencyPillActive]}
+                   disabled={saving}
+                 >
+                   <Text style={[styles.currencyPillText, settings?.default_currency === curr.code && styles.currencyPillTextActive]}>
+                     {curr.code}
+                   </Text>
+                 </TouchableOpacity>
+               ))}
+             </ScrollView>
+           </View>
+           
+           <View style={styles.divider} />
+
+           {/* Placeholder elements matching mockup exactly */}
+           <TouchableOpacity style={styles.cardItem}>
+             <View style={styles.itemRow}>
+               <View style={[styles.itemIconBox, { backgroundColor: '#d1fae5' }]}>
+                 <CreditCard color="#10b981" size={20} />
+               </View>
+               <Text style={styles.itemTextLeft}>Subscription</Text>
+             </View>
+             <View style={styles.itemRow}>
+                <Text style={styles.proLabel}>PRO</Text>
+                <ChevronRight color={UI_COLORS.textSecondary} size={20} />
+             </View>
+           </TouchableOpacity>
+
+           <View style={styles.divider} />
+
+           <TouchableOpacity style={styles.cardItem}>
+             <View style={styles.itemRow}>
+               <View style={[styles.itemIconBox, { backgroundColor: '#fef3c7' }]}>
+                 <Shield color="#f59e0b" size={20} />
+               </View>
+               <Text style={styles.itemTextLeft}>Security & Privacy</Text>
+             </View>
+             <ChevronRight color={UI_COLORS.textSecondary} size={20} />
+           </TouchableOpacity>
+
+        </View>
+
+        {/* System Settings Block */}
+        <View style={styles.cardBlock}>
+           <View style={styles.cardItem}>
+             <View style={styles.itemRow}>
+               <View style={[styles.itemIconBox, { backgroundColor: '#e0f2fe' }]}>
+                 <Bell color="#0ea5e9" size={20} />
+               </View>
+               <Text style={styles.itemTextLeft}>Notifications (Alerts)</Text>
+             </View>
+             <Switch
                 value={settings?.budget_alert_enabled ?? true}
                 onValueChange={handleBudgetAlertToggle}
                 disabled={saving}
+                trackColor={{ false: '#e2e8f0', true: UI_COLORS.primary }}
+                thumbColor="#FFFFFF"
               />
-            </View>
-            <Text style={styles.settingDescription}>
-              Get notified when spending exceeds {BUDGET_ALERT_PERCENTAGE}% of budget
-            </Text>
-          </Card>
+           </View>
+           
+           <View style={styles.divider} />
+
+           <View style={styles.cardItem}>
+             <View style={styles.itemRow}>
+               <View style={[styles.itemIconBox, { backgroundColor: '#f3e8ff' }]}>
+                 <Moon color="#a855f7" size={20} />
+               </View>
+               <Text style={styles.itemTextLeft}>Dark Mode</Text>
+             </View>
+             <Switch
+                value={false} // Placeholder for dark mode if we add it later
+                onValueChange={() => {}}
+                disabled={true}
+                trackColor={{ false: '#e2e8f0', true: UI_COLORS.primary }}
+                thumbColor="#FFFFFF"
+              />
+           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Monthly Budgets</Text>
+        {/* Budgets Block */}
+        <Text style={styles.blockTitle}>Monthly Budgets</Text>
+        <View style={styles.cardBlock}>
+          {budgets.length === 0 && (
+             <Text style={styles.emptyText}>No budgets set up yet.</Text>
+          )}
 
-          {budgets.map((budget) => {
+          {budgets.map((budget, idx) => {
             const status = getBudgetStatus(budget);
             const categoryInfo = CATEGORIES.find((c) => c.id === budget.category);
             const isAlert = status.percentage >= BUDGET_ALERT_PERCENTAGE;
 
             return (
-              <Card
-                key={budget.id}
-                style={[styles.budgetCard, isAlert ? styles.budgetCardAlert : undefined] as any}
-              >
-                <View style={styles.budgetHeader}>
-                  <View style={styles.budgetInfo}>
-                    <Text style={styles.budgetIcon}>{categoryInfo?.icon || '📌'}</Text>
-                    <Text style={styles.budgetCategory}>{categoryInfo?.name || 'Other'}</Text>
+              <View key={budget.id}>
+                {idx > 0 && <View style={styles.divider} />}
+                <View style={styles.budgetRow}>
+                  <View style={styles.budgetTop}>
+                    <View style={styles.budgetInfoLeft}>
+                      <Text style={styles.budgetIcon}>{categoryInfo?.icon || '📌'}</Text>
+                      <Text style={styles.budgetName}>{categoryInfo?.name || 'Other'}</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => handleDeleteBudget(budget.id)} style={styles.budgetDelBtn}>
+                      <Trash2 size={16} color={UI_COLORS.danger} />
+                    </TouchableOpacity>
                   </View>
-                  <TouchableOpacity onPress={() => handleDeleteBudget(budget.id)}>
-                    <Trash2 size={18} color="#FF0000" />
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.budgetProgress}>
-                  <View style={styles.budgetProgressBar}>
-                    <View
-                      style={[
-                        styles.budgetProgressFill,
-                        {
-                          width: `${Math.min(status.percentage, 100)}%`,
-                          backgroundColor: isAlert ? '#FF0000' : '#000000',
-                        },
-                      ]}
-                    />
+  
+                  <View style={styles.budgetProgressRow}>
+                     <View style={styles.progressBarBg}>
+                        <View style={[styles.progressBarFill, { width: `${Math.min(status.percentage, 100)}%`, backgroundColor: isAlert ? UI_COLORS.danger : UI_COLORS.primary }]} />
+                     </View>
+                     <Text style={[styles.budgetPercentageText, isAlert && { color: UI_COLORS.danger }]}>{status.percentage.toFixed(0)}%</Text>
                   </View>
-                  <Text style={styles.budgetPercentage}>{status.percentage.toFixed(0)}%</Text>
+                  
+                  <View style={styles.budgetAmountsRow}>
+                    <Text style={styles.budgetAmountText}>
+                      {settings?.default_currency === budget.currency ? '$' : ''}{status.spent.toFixed(2)} spent
+                    </Text>
+                    <Text style={styles.budgetAmountText}>
+                      / {settings?.default_currency === budget.currency ? '$' : ''}{budget.monthly_limit.toFixed(2)} limit
+                    </Text>
+                  </View>
                 </View>
-
-                <View style={styles.budgetAmount}>
-                  <Text style={styles.budgetSpent}>
-                    Spent: {settings?.default_currency === budget.currency ? '$' : ''} {status.spent.toFixed(2)}
-                  </Text>
-                  <Text style={styles.budgetLimit}>
-                    Limit: {settings?.default_currency === budget.currency ? '$' : ''} {budget.monthly_limit.toFixed(2)}
-                  </Text>
-                </View>
-              </Card>
+              </View>
             );
           })}
-
-          <Card style={styles.addBudgetCard}>
-            <Text style={styles.addBudgetTitle}>Add Budget</Text>
-
-            <View style={styles.categorySelector}>
-              <Text style={styles.label}>Category</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.categoryList}
-              >
-                {CATEGORIES.filter((c) => !budgets.find((b) => b.category === c.id)).map(
-                  (category) => (
-                    <TouchableOpacity
-                      key={category.id}
-                      onPress={() => setNewBudgetCategory(category.id)}
-                      style={[
-                        styles.categoryOption,
-                        newBudgetCategory === category.id && styles.categoryOptionActive,
-                      ]}
-                    >
-                      <Text style={styles.categoryOptionIcon}>{category.icon}</Text>
-                      <Text style={styles.categoryOptionName}>{category.name}</Text>
-                    </TouchableOpacity>
-                  )
-                )}
-              </ScrollView>
-            </View>
-
-            <Input
-              label="Monthly Limit"
-              placeholder="0.00"
-              value={newBudgetAmount}
-              onChangeText={setNewBudgetAmount}
-              keyboardType="decimal-pad"
-              editable={!saving}
-            />
-
-            <Button
-              title={saving ? 'Adding...' : 'Add Budget'}
-              onPress={handleAddBudget}
-              disabled={saving || !newBudgetCategory}
-              variant={newBudgetCategory ? 'primary' : 'secondary'}
-            />
-          </Card>
         </View>
 
-        <View style={styles.section}>
-          <Button
-            title="Sign Out"
-            variant="danger"
-            onPress={handleSignOut}
-            disabled={saving}
-          />
+        {/* Add Budget Form (Using identical styling but standalone) */}
+        <Text style={styles.blockTitle}>Add New Budget</Text>
+        <View style={[styles.cardBlock, { padding: 16 }]}>
+           <ScrollView
+             horizontal
+             showsHorizontalScrollIndicator={false}
+             style={styles.categoryScroll}
+           >
+             {CATEGORIES.filter((c) => !budgets.find((b) => b.category === c.id)).map(
+               (category) => (
+                 <TouchableOpacity
+                   key={category.id}
+                   onPress={() => setNewBudgetCategory(category.id)}
+                   style={[styles.catOption, newBudgetCategory === category.id && styles.catOptionActive]}
+                 >
+                   <Text style={styles.catOptionIcon}>{category.icon}</Text>
+                 </TouchableOpacity>
+               )
+             )}
+           </ScrollView>
+           
+           <View style={styles.addBudgetInputRow}>
+             <View style={{ flex: 1, marginRight: 8 }}>
+               <Input
+                 placeholder="0.00 Limit"
+                 value={newBudgetAmount}
+                 onChangeText={setNewBudgetAmount}
+                 keyboardType="decimal-pad"
+                 editable={!saving}
+               />
+             </View>
+             <TouchableOpacity 
+                style={[styles.addBudgetBtn, (!newBudgetCategory || saving) && { opacity: 0.5 }]} 
+                onPress={handleAddBudget}
+                disabled={saving || !newBudgetCategory}
+             >
+                <Text style={styles.addBudgetBtnText}>Add</Text>
+             </TouchableOpacity>
+           </View>
         </View>
+
+        {/* Sign Out Button mapped perfectly to mockup */}
+        <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut} disabled={saving}>
+           <LogOut color="#64748b" size={20} style={{ marginRight: 8 }} />
+           <Text style={styles.signOutBtnText}>Sign Out</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.versionText}>PENNYPANDA V2.4.0 (VARIANT 9/10)</Text>
+        <View style={{ height: 40 }}/>
       </ScrollView>
     </SafeAreaView>
   );
@@ -340,176 +418,305 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  content: {
-    flex: 1,
-  },
-  contentInner: {
-    padding: 16,
-    paddingBottom: 32,
+    backgroundColor: UI_COLORS.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
+  loadingText: {
+    color: UI_COLORS.textSecondary,
     fontSize: 14,
-    fontWeight: '700',
-    color: '#000000',
-    marginBottom: 12,
-    textTransform: 'uppercase',
-  },
-  settingCard: {
-    marginBottom: 12,
-  },
-  settingLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#000000',
-    marginBottom: 8,
-  },
-  settingDescription: {
-    fontSize: 12,
-    color: '#666666',
-    marginTop: 8,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  currencyList: {
-    marginBottom: 0,
-  },
-  currencyButton: {
-    borderWidth: 1,
-    borderColor: '#CCCCCC',
-    borderRadius: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginRight: 8,
-    backgroundColor: '#FFFFFF',
-  },
-  currencyButtonActive: {
-    borderColor: '#000000',
-    backgroundColor: '#F0F0F0',
-  },
-  currencyButtonText: {
-    fontSize: 12,
-    color: '#000000',
     fontWeight: '500',
   },
-  currencyButtonTextActive: {
-    fontWeight: '700',
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 16,
+    backgroundColor: UI_COLORS.background,
   },
-  label: {
+  headerBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: UI_COLORS.textMain,
+  },
+  content: {
+    flex: 1,
+  },
+  contentInner: {
+    padding: 24,
+  },
+  profileSection: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  avatarWrapper: {
+    padding: 4,
+    borderRadius: 60,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 4,
+    marginBottom: 16,
+  },
+  avatarInner: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#f1f5f9',
+    position: 'relative',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 50,
+  },
+  editAvatarBtn: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: UI_COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+  },
+  profileName: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: UI_COLORS.textMain,
+    marginBottom: 4,
+  },
+  profileEmail: {
     fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#000000',
+    fontWeight: '500',
+    color: UI_COLORS.textSecondary,
   },
-  budgetCard: {
+  blockTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: UI_COLORS.textSecondary,
     marginBottom: 12,
+    marginLeft: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  budgetCardAlert: {
-    backgroundColor: '#FFF5F5',
-    borderColor: '#FF0000',
+  cardBlock: {
+    backgroundColor: UI_COLORS.surface,
+    borderRadius: 24,
+    paddingVertical: 12,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 2,
   },
-  budgetHeader: {
+  cardItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  itemIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  itemTextLeft: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: UI_COLORS.textMain,
+  },
+  proLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: UI_COLORS.success,
+    marginRight: 8,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: UI_COLORS.border,
+    marginHorizontal: 20,
+  },
+  currencyScroll: {
+    marginLeft: 16,
+  },
+  currencyPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: UI_COLORS.border,
+    marginRight: 8,
+  },
+  currencyPillActive: {
+    backgroundColor: UI_COLORS.primary,
+  },
+  currencyPillText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: UI_COLORS.textSecondary,
+  },
+  currencyPillTextActive: {
+    color: '#FFFFFF',
+  },
+  budgetRow: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  budgetTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
-  budgetInfo: {
+  budgetInfoLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   budgetIcon: {
-    fontSize: 24,
-    marginRight: 8,
+    fontSize: 20,
+    marginRight: 12,
   },
-  budgetCategory: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#000000',
+  budgetName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: UI_COLORS.textMain,
   },
-  budgetProgress: {
+  budgetDelBtn: {
+    padding: 4,
+    backgroundColor: '#fee2e2',
+    borderRadius: 8,
+  },
+  budgetProgressRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
-    gap: 8,
+    marginBottom: 8,
   },
-  budgetProgressBar: {
+  progressBarBg: {
     flex: 1,
-    height: 6,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 3,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: UI_COLORS.border,
     overflow: 'hidden',
+    marginRight: 12,
   },
-  budgetProgressFill: {
+  progressBarFill: {
     height: '100%',
+    borderRadius: 4,
   },
-  budgetPercentage: {
+  budgetPercentageText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#000000',
-    minWidth: 36,
+    color: UI_COLORS.textSecondary,
+    width: 36,
+    textAlign: 'right',
   },
-  budgetAmount: {
+  budgetAmountsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  budgetSpent: {
+  budgetAmountText: {
     fontSize: 12,
-    color: '#000000',
-    fontWeight: '500',
-  },
-  budgetLimit: {
-    fontSize: 12,
-    color: '#666666',
-  },
-  addBudgetCard: {
-    paddingVertical: 16,
-  },
-  addBudgetTitle: {
-    fontSize: 14,
+    color: UI_COLORS.textSecondary,
     fontWeight: '600',
-    color: '#000000',
-    marginBottom: 12,
   },
-  categorySelector: {
+  emptyText: {
+    padding: 20,
+    fontSize: 14,
+    color: UI_COLORS.textSecondary,
+    textAlign: 'center',
+  },
+  categoryScroll: {
     marginBottom: 16,
   },
-  categoryList: {
-    marginBottom: 0,
+  catOption: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: UI_COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
-  categoryOption: {
-    borderWidth: 1,
-    borderColor: '#CCCCCC',
-    borderRadius: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    marginRight: 8,
+  catOptionActive: {
+    backgroundColor: UI_COLORS.primaryLight,
+    borderWidth: 2,
+    borderColor: UI_COLORS.primary,
+  },
+  catOptionIcon: {
+    fontSize: 24,
+  },
+  addBudgetInputRow: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  categoryOptionActive: {
-    borderColor: '#000000',
-    backgroundColor: '#F0F0F0',
+  addBudgetBtn: {
+    backgroundColor: UI_COLORS.primary,
+    paddingHorizontal: 24,
+    height: 52, // Match input height roughly
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  categoryOptionIcon: {
-    fontSize: 20,
-    marginBottom: 4,
+  addBudgetBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 16,
   },
-  categoryOptionName: {
-    fontSize: 10,
-    color: '#000000',
-    fontWeight: '500',
+  signOutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    paddingVertical: 18,
+    marginTop: 16,
+    marginBottom: 24,
   },
+  signOutBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  versionText: {
+    textAlign: 'center',
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#94a3b8',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  }
 });

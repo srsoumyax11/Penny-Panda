@@ -6,6 +6,7 @@ export type Expense = {
   category: string;
   description: string | null;
   date: string;
+  payment_method: string;
   receipt_url: string | null;
   created_at: string;
   updated_at: string;

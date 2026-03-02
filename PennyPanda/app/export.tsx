@@ -89,7 +89,7 @@ export default function ExportScreen() {
 
   const generateHTML = (expenses: Expense[]) => {
     const formatDate = (date: string) => new Date(date).toLocaleDateString();
-    const currency = expenses[0]?.currency || 'USD';
+    const currency = expenses[0]?.currency || 'INR';
     
     // Group by category for summary
     const categoryTotals = expenses.reduce((acc, exp) => {
@@ -97,14 +97,18 @@ export default function ExportScreen() {
       return acc;
     }, {} as Record<string, number>);
 
-    const rows = expenses.map(exp => `
-      <tr>
-        <td>${formatDate(exp.date)}</td>
-        <td>${CATEGORIES.find(c => c.id === exp.category)?.name || exp.category}</td>
-        <td>${exp.description || '-'}</td>
-        <td style="text-align: right;">${exp.amount.toFixed(2)}</td>
-      </tr>
-    `).join('');
+    const rows = expenses.map(exp => {
+      const pMethod = PAYMENT_METHODS.find(p => p.id === exp.payment_method);
+      return `
+        <tr>
+          <td>${formatDate(exp.date)}</td>
+          <td>${CATEGORIES.find(c => c.id === exp.category)?.name || exp.category}</td>
+          <td>${pMethod ? pMethod.icon + ' ' + pMethod.name : '-'}</td>
+          <td>${exp.description || '-'}</td>
+          <td style="text-align: right;">${exp.amount.toFixed(2)}</td>
+        </tr>
+      `;
+    }).join('');
 
     const summaryRows = Object.entries(categoryTotals).map(([cat, total]) => `
       <tr>

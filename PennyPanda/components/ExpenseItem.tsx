@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Expense } from '@/types';
-import { CATEGORIES, CURRENCIES } from '@/constants';
-import { Trash2, ShoppingBag, Utensils, Zap, Car, Home as HomeIcon, Film, DollarSign } from 'lucide-react-native';
+import { CATEGORIES, CURRENCIES, PAYMENT_METHODS } from '@/constants';
+import { Trash2, ShoppingBag, Utensils, Zap, Car, Home as HomeIcon, Film, DollarSign, Wallet } from 'lucide-react-native';
 
 import { getCategoryIcon } from '@/utils/icons';
 import { UI_COLORS, CATEGORY_COLORS } from '@/constants/theme';
@@ -17,6 +17,7 @@ interface ExpenseItemProps {
 export function ExpenseItem({ expense, onEdit, onDelete }: ExpenseItemProps) {
   const category = CATEGORIES.find((c) => c.id === expense.category);
   const currency = CURRENCIES.find((c) => c.code === expense.currency);
+  const paymentMethod = PAYMENT_METHODS.find((p) => p.id === expense.payment_method);
   const date = new Date(expense.date);
   
   const isToday = new Date().toDateString() === date.toDateString();
@@ -40,7 +41,14 @@ export function ExpenseItem({ expense, onEdit, onDelete }: ExpenseItemProps) {
             ) : (
                <Text style={styles.descriptionText}>{category?.name || 'Other'}</Text>
             )}
-            <Text style={styles.categoryText}>{category?.name || 'Other'} • {formattedDate}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+               <Text style={styles.categoryText}>{category?.name || 'Other'} • {formattedDate}</Text>
+               {paymentMethod && (
+                 <View style={styles.paymentBadge}>
+                    <Text style={styles.paymentBadgeText}>{paymentMethod.icon} {paymentMethod.name}</Text>
+                 </View>
+               )}
+            </View>
           </View>
         </View>
         <View style={styles.expenseRight}>
@@ -111,5 +119,18 @@ const styles = StyleSheet.create({
     paddingLeft: 12,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  paymentBadge: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  paymentBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
   },
 });

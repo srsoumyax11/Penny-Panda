@@ -5,8 +5,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { expenseService, settingsService } from '@/lib/storage';
 import { Button } from '@/components/Button';
 import { CategoryPicker } from '@/components/CategoryPicker';
-import { CURRENCIES } from '@/constants';
-import { Calendar, AlignLeft, X } from 'lucide-react-native';
+import { CURRENCIES, PAYMENT_METHODS } from '@/constants';
+import { Calendar, AlignLeft, X, Wallet } from 'lucide-react-native';
 
 import { UI_COLORS } from '@/constants/theme';
 
@@ -27,6 +27,7 @@ export default function AddExpenseScreen() {
   // Date State
   const [dateObj, setDateObj] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('cash');
   
   const [currency, setCurrency] = useState('USD');
   const [currencySymbol, setCurrencySymbol] = useState('$');
@@ -68,6 +69,7 @@ export default function AddExpenseScreen() {
         category: category!,
         description: description || null,
         date: dateObj.toISOString(),
+        payment_method: paymentMethod,
         receipt_url: null,
       });
 
@@ -142,7 +144,36 @@ export default function AddExpenseScreen() {
                maximumDate={new Date()}
              />
            )}
+         </View>
+
+        <View style={styles.inputSection}>
+           <Text style={styles.sectionLabel}>PAYMENT METHOD</Text>
+           <ScrollView 
+             horizontal 
+             showsHorizontalScrollIndicator={false} 
+             contentContainerStyle={styles.paymentMethodsRow}
+           >
+             {PAYMENT_METHODS.map(method => (
+               <TouchableOpacity
+                 key={method.id}
+                 style={[
+                   styles.paymentPill,
+                   paymentMethod === method.id && styles.paymentPillActive
+                 ]}
+                 onPress={() => setPaymentMethod(method.id)}
+               >
+                 <Text style={styles.paymentIcon}>{method.icon}</Text>
+                 <Text style={[
+                   styles.paymentText,
+                   paymentMethod === method.id && styles.paymentTextActive
+                 ]}>
+                   {method.name}
+                 </Text>
+               </TouchableOpacity>
+             ))}
+           </ScrollView>
         </View>
+
         <View style={styles.inputSection}>
            <Text style={styles.sectionLabel}>NOTE</Text>
            <View style={styles.iconInputBox}>
@@ -284,5 +315,35 @@ const styles = StyleSheet.create({
   saveBtn: {
     paddingVertical: 18,
     borderRadius: 16,
+  },
+  paymentMethodsRow: {
+    paddingVertical: 4,
+  },
+  paymentPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 14,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  paymentPillActive: {
+    backgroundColor: '#EEF2FF',
+    borderColor: UI_COLORS.primary,
+  },
+  paymentIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  paymentText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  paymentTextActive: {
+    color: UI_COLORS.primary,
   },
 });

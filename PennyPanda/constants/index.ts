@@ -9,6 +9,13 @@ export const CATEGORIES = [
   { id: 'other', name: 'Other', icon: '📌', color: '#757575' },
 ];
 
+export const PAYMENT_METHODS = [
+  { id: 'cash', name: 'Cash', icon: '💵' },
+  { id: 'upi', name: 'UPI', icon: '📱' },
+  { id: 'card', name: 'Card', icon: '💳' },
+  { id: 'bank', name: 'Bank', icon: '🏦' },
+];
+
 export const CURRENCIES = [
   { code: 'USD', symbol: '$', name: 'US Dollar' },
   { code: 'EUR', symbol: '€', name: 'Euro' },
@@ -22,6 +29,20 @@ export const CURRENCIES = [
   { code: 'SEK', symbol: 'kr', name: 'Swedish Krona' },
 ];
 
-export const DEFAULT_CURRENCY = 'USD';
-export const DEFAULT_BUDGET_LIMIT = 1000;
+// Base USD rates for conversion logic
+export const EXCHANGE_RATES: Record<string, number> = {
+  USD: 1,
+  EUR: 0.92,
+  GBP: 0.79,
+  JPY: 150.5,
+  INR: 82.9,
+  AUD: 1.52,
+  CAD: 1.35,
+  CHF: 0.88,
+  CNY: 7.19,
+  SEK: 10.35,
+};
+
+export const DEFAULT_CURRENCY = 'INR';
+export const DEFAULT_BUDGET_LIMIT = 5000; // Increased default for INR
 export const BUDGET_ALERT_PERCENTAGE = 80;

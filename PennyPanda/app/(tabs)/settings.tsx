@@ -16,7 +16,7 @@ import { budgetService, settingsService, expenseService } from '@/lib/storage';
 import { Budget, UserSettings } from '@/types';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
-import { CATEGORIES, CURRENCIES, BUDGET_ALERT_PERCENTAGE } from '@/constants';
+import { CATEGORIES, CURRENCIES, BUDGET_ALERT_PERCENTAGE, EXCHANGE_RATES, PAYMENT_METHODS } from '@/constants';
 import { Trash2, ChevronLeft, Edit3, Globe, Bell, Moon, LogOut, ChevronRight, User, Shield, CreditCard, Database, Zap, FileText } from 'lucide-react-native';
 
 import { UI_COLORS } from '@/constants/theme';
@@ -51,14 +51,45 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleCurrencyChange = async (currency: string) => {
+  const handleCurrencyChange = async (newCurrency: string) => {
     if (!settings) return;
+    const oldCurrency = settings.default_currency;
+    if (oldCurrency === newCurrency) return;
+
     setSaving(true);
     try {
-      await settingsService.updateSettings({ default_currency: currency });
-      setSettings({ ...settings, default_currency: currency });
+      // Calculate conversion factor
+      const oldRate = EXCHANGE_RATES[oldCurrency] || 1;
+      const newRate = EXCHANGE_RATES[newCurrency] || 1;
+      const factor = newRate / oldRate;
+
+      // 1. Update all expenses
+      const allExpenses = await expenseService.getExpenses();
+      for (const exp of allExpenses) {
+        await expenseService.updateExpense(exp.id, {
+          amount: Number((exp.amount * factor).toFixed(2)),
+          currency: newCurrency
+        });
+      }
+
+      // 2. Update all budgets
+      const allBudgets = await budgetService.getBudgets();
+      for (const budget of allBudgets) {
+        await budgetService.updateBudget(budget.id, {
+          monthly_limit: Number((budget.monthly_limit * factor).toFixed(2)),
+          currency: newCurrency
+        });
+      }
+
+      // 3. Update settings
+      await settingsService.updateSettings({ default_currency: newCurrency });
+      
+      setSettings({ ...settings, default_currency: newCurrency });
+      await loadData();
+      
+      Alert.alert('Currency Updated', `All your data has been mathematically converted to ${newCurrency}.`);
     } catch (error) {
-      Alert.alert('Error', 'Failed to update currency');
+      Alert.alert('Error', 'Failed to update currency and convert data');
     } finally {
       setSaving(false);
     }
@@ -97,13 +128,15 @@ export default function SettingsScreen() {
           const category = categories[Math.floor(Math.random() * categories.length)];
           const amount = Math.floor(Math.random() * 150) + 10;
           const note = `Test ${CATEGORIES.find(c => c.id === category)?.name} #${j + 1}`;
+          const paymentMethod = PAYMENT_METHODS[Math.floor(Math.random() * PAYMENT_METHODS.length)].id;
 
           await expenseService.addExpense({
             category,
             amount,
             date: date.toISOString(),
             description: note,
-            currency: settings?.default_currency || 'USD',
+            currency: settings?.default_currency || 'INR',
+            payment_method: paymentMethod,
             receipt_url: null,
           });
         }
@@ -122,12 +155,15 @@ export default function SettingsScreen() {
   const handleGenerateDummyBudgets = async () => {
     setSaving(true);
     try {
+      const isINR = (settings?.default_currency || 'INR') === 'INR';
+      const factor = isINR ? 80 : 1;
+
       const dummyBudgets = [
-        { category: 'food', monthly_limit: 500, period: 'monthly' },
-        { category: 'transport', monthly_limit: 200, period: 'monthly' },
-        { category: 'entertainment', monthly_limit: 150, period: 'monthly' },
-        { category: 'shopping', monthly_limit: 300, period: 'monthly' },
-        { category: 'health', monthly_limit: 100, period: 'monthly' },
+        { category: 'food', monthly_limit: 500 * factor, currency: settings?.default_currency || 'INR' },
+        { category: 'transport', monthly_limit: 200 * factor, currency: settings?.default_currency || 'INR' },
+        { category: 'entertainment', monthly_limit: 150 * factor, currency: settings?.default_currency || 'INR' },
+        { category: 'shopping', monthly_limit: 300 * factor, currency: settings?.default_currency || 'INR' },
+        { category: 'health', monthly_limit: 100 * factor, currency: settings?.default_currency || 'INR' },
       ];
 
       for (const budget of dummyBudgets) {
